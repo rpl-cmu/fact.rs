@@ -16,12 +16,6 @@ exclude = ["examples/data/*"]
 members = ["factrs-bench", "factrs-proc"]
 exclude = ["factrs-typetag"]
 
-# [profile.release]
-# lto = "thin"
-
-[profile.dev.package.faer]
-opt-level = 3
-
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "assets/katex-header.html"]
 
@@ -85,6 +79,16 @@ matrixcompare = "0.3.0"
 pretty_env_logger = "0.5"
 nalgebra = { version = "0.33.2", features = ["compare"] }
 serde_json = { version = "1.0.132" }
+
+[profile.bench]
+lto = true
+
+[profile.profile]
+inherits = "bench"
+debug = true
+
+[profile.dev.package.faer]
+opt-level = 3
 
 [[example]]
 name = "serde"

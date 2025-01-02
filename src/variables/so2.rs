@@ -138,6 +138,7 @@ impl<T: Numeric> MatrixLieGroup for SO2<T> {
 impl<T: Numeric> ops::Mul for SO2<T> {
     type Output = SO2<T>;
 
+    #[inline]
     fn mul(self, other: Self) -> Self::Output {
         self.compose(&other)
     }
@@ -146,6 +147,7 @@ impl<T: Numeric> ops::Mul for SO2<T> {
 impl<T: Numeric> ops::Mul for &SO2<T> {
     type Output = SO2<T>;
 
+    #[inline]
     fn mul(self, other: Self) -> Self::Output {
         self.compose(other)
     }

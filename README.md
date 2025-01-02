@@ -86,25 +86,27 @@ fn main() {
 </details>
 
 # Benchmarks
-Benchmarks were ran on a 12th Gen Intel i9 and are all single-threaded (for now). factrs has competitive performance with other libraries for many problems, but is marginally slower for very large problems. Current benchmarks include [gtsam](https://github.com/borglab/gtsam/) and [tinysolver-rs](https://github.com/powei-lin/tiny-solver-rs).
+Performance-wise, factrs is competitive with alternative libraries. Benchmarks were ran on a 12th Gen Intel i9 and are all single-threaded (for now). Current benchmarks include [gtsam](https://github.com/borglab/gtsam/) and [tinysolver-rs](https://github.com/powei-lin/tiny-solver-rs).
 
 ### 2D Benchmarks
 | benchmark  | args      | fastest   | median    | mean      |
 |------------|-----------|-----------|-----------|-----------|
-| factrs     | M3500.g2o | 86.22 ms  | 87.87 ms  | 88.17 ms  |
-| gtsam      | M3500.g2o | 160.44 ms | 162.52ms  | 162.33ms  |
-| tinysolver | M3500.g2o | 132.71 ms | 138.20 ms | 138.35 ms |
+| factrs     | M3500.g2o | 81.23 ms  | 82.13 ms  | 82.80 ms  |
+| gtsam      | M3500.g2o | 160.00 ms | 161.13 ms | 161.14 ms |
+| tinysolver | M3500.g2o | 125.13 ms | 130.46 ms | 132.08 ms |
+
 
 ### 3D Benchmarks
 | benchmark | args               | fastest   | median    | mean      |
 |-----------|--------------------|-----------|-----------|-----------|
-| factrs    | sphere2500.g2o     | 488.74 ms | 495.06 ms | 493.41 ms |
-| gtsam     | sphere2500.g2o     | 397.97    | 401.94    | 403.63    |
-| factrs    | parking-garage.g2o | 406.54 ms | 408.21 ms | 408.03 ms |
-| gtsam     | parking-garage.g2o | 113.64    | 114.55    | 114.55    |
+| factrs    | sphere2500.g2o     | 366.47 ms | 368.66 ms | 369.75 ms |
+| gtsam     | sphere2500.g2o     | 389.81 ms | 395.16 ms | 396.65 ms |
+| factrs    | parking-garage.g2o | 291.02 ms | 294.33 ms | 295.53 ms |
+| gtsam     | parking-garage.g2o | 113.24 ms | 114.74 ms | 114.45 ms |
 
+*Note, gtsam is significantly faster for the parking garage due to leveraging the sparsity of the pose graph better using the Baye's tree, something that is planned for factrs*
 
-To run the rust benchmarks, simply run,
+To run the rust benchmarks after cloning, simply run,
 ```bash
 cargo bench -p factrs-bench
 ```

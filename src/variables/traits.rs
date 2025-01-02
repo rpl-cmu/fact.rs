@@ -58,6 +58,7 @@ pub trait Variable: Clone + Sized + Display + Debug {
     /// $$
     ///
     /// [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
+    #[inline]
     fn oplus(&self, xi: VectorViewX<Self::T>) -> Self {
         if cfg!(feature = "left") {
             self.oplus_left(xi)
@@ -66,10 +67,12 @@ pub trait Variable: Clone + Sized + Display + Debug {
         }
     }
 
+    #[inline]
     fn oplus_right(&self, xi: VectorViewX<Self::T>) -> Self {
         self.compose(&Self::exp(xi))
     }
 
+    #[inline]
     fn oplus_left(&self, xi: VectorViewX<Self::T>) -> Self {
         Self::exp(xi).compose(self)
     }
@@ -86,6 +89,7 @@ pub trait Variable: Clone + Sized + Display + Debug {
     /// $$
     ///
     /// [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
+    #[inline]
     fn ominus(&self, y: &Self) -> VectorX<Self::T> {
         if cfg!(feature = "left") {
             self.ominus_left(y)
@@ -94,10 +98,12 @@ pub trait Variable: Clone + Sized + Display + Debug {
         }
     }
 
+    #[inline]
     fn ominus_right(&self, y: &Self) -> VectorX<Self::T> {
         y.inverse().compose(self).log()
     }
 
+    #[inline]
     fn ominus_left(&self, y: &Self) -> VectorX<Self::T> {
         self.compose(&y.inverse()).log()
     }
@@ -114,6 +120,7 @@ pub trait Variable: Clone + Sized + Display + Debug {
     /// $$
     ///
     /// This operation is NOT effected by the left/right feature.
+    #[inline]
     fn minus(&self, other: &Self) -> Self {
         other.inverse().compose(self)
     }
@@ -127,6 +134,7 @@ pub trait Variable: Clone + Sized + Display + Debug {
     /// By default this uses the exponential map to propagate dual numbers to
     /// the variable to setup the jacobian properly. Can be hardcoded to avoid
     /// the repeated computation.
+    #[inline]
     fn dual_exp<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
@@ -145,6 +153,7 @@ pub trait Variable: Clone + Sized + Display + Debug {
     ///
     /// Takes the results from [dual_exp](Self::dual_exp) and applies the
     /// tangent vector using the right/left oplus operator.
+    #[inline]
     fn dual<N: DimName>(&self, idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
