@@ -35,7 +35,7 @@ use crate::{
 /// let mut values = Values::new();
 /// values.insert(X(0), x);
 /// ```
-#[derive(Default)]
+#[derive(Default, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Values {
     values: HashMap<Key, Box<dyn VariableSafe>>,
@@ -210,7 +210,8 @@ impl fmt::Display for Values {
 
 /// Formatter for values
 ///
-/// Specifically, this can be used if custom symbols are desired. See `tests/custom_key` for examples.
+/// Specifically, this can be used if custom symbols are desired. See
+/// `tests/custom_key` for examples.
 pub struct ValuesFormatter<'v, KF> {
     values: &'v Values,
     kf: PhantomData<KF>,

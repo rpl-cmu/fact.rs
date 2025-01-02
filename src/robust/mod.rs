@@ -23,6 +23,8 @@
 
 use std::fmt::Debug;
 
+use dyn_clone::DynClone;
+
 use crate::dtype;
 
 /// Robust cost function
@@ -33,13 +35,15 @@ use crate::dtype;
 /// [NumericalDiff](crate::linalg::NumericalDiff) to check that the weight is
 /// correct.
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
-pub trait RobustCost: Debug {
+pub trait RobustCost: Debug + DynClone {
     /// Compute the loss \rho(x^2)
     fn loss(&self, d2: dtype) -> dtype;
 
     /// Compute the weight \rho'(x^2) / x
     fn weight(&self, d2: dtype) -> dtype;
 }
+
+dyn_clone::clone_trait_object!(RobustCost);
 
 #[cfg(feature = "serde")]
 pub use register_robustcost as tag_robust;
@@ -334,8 +338,9 @@ impl Debug for Tukey {
 }
 
 // Helpers for making sure robust costs are implemented correctly
-use crate::linalg::numerical_derivative;
 use matrixcompare::assert_scalar_eq;
+
+use crate::linalg::numerical_derivative;
 
 #[cfg(not(feature = "f32"))]
 const EPS: dtype = 1e-6;

@@ -229,6 +229,7 @@ impl<T: Numeric> MatrixLieGroup for SE3<T> {
 impl<T: Numeric> ops::Mul for SE3<T> {
     type Output = SE3<T>;
 
+    #[inline]
     fn mul(self, other: Self) -> Self::Output {
         self.compose(&other)
     }
@@ -237,6 +238,7 @@ impl<T: Numeric> ops::Mul for SE3<T> {
 impl<T: Numeric> ops::Mul for &SE3<T> {
     type Output = SE3<T>;
 
+    #[inline]
     fn mul(self, other: Self) -> Self::Output {
         self.compose(other)
     }

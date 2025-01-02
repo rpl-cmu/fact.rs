@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use dyn_clone::DynClone;
+
 use crate::{
     containers::{Key, Values},
     linalg::{Diff, DiffResult, DimName, MatrixX, Numeric, VectorX},
@@ -15,7 +17,7 @@ type Alias<V, T> = <V as Variable>::Alias<T>;
 /// one of the numbered residuals traits instead, and then call the
 /// [impl_residual](crate::impl_residual) macro to implement this trait.
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
-pub trait Residual: Debug {
+pub trait Residual: Debug + DynClone {
     fn dim_in(&self) -> usize;
 
     fn dim_out(&self) -> usize;
@@ -25,12 +27,12 @@ pub trait Residual: Debug {
     fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>;
 }
 
-#[cfg(feature = "serde")]
-pub use register_residual as tag_residual;
+dyn_clone::clone_trait_object!(Residual);
 
 // -------------- Use Macro to create residuals with set sizes -------------- //
 use paste::paste;
-
+#[cfg(feature = "serde")]
+pub use register_residual as tag_residual;
 macro_rules! residual_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {

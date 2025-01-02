@@ -41,7 +41,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
 
                 // Add prior on whatever the first variable is
                 if values.len() == 1 {
-                    let factor = fac![PriorResidual::new(var.clone()), key];
+                    let factor = fac![PriorResidual::new(var.clone()), key, 1e-6 as cov];
                     graph.add_factor(factor);
                 }
 
@@ -61,7 +61,13 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let m22 = parts[9].parse::<dtype>().expect("Failed to parse g20");
                 let m23 = parts[10].parse::<dtype>().expect("Failed to parse g20");
                 let m33 = parts[11].parse::<dtype>().expect("Failed to parse g20");
-                let inf = Matrix3::new(m11, m12, m13, m12, m22, m23, m13, m23, m33);
+                // Note have to permute here - g2o stores with translation first, factrs with rotation first
+                #[rustfmt::skip]
+                let inf = Matrix3::new(
+                    m33, m13, m23,
+                    m13, m11, m12,
+                    m23, m12, m22,
+                );
 
                 let key1 = X(id_prev);
                 let key2 = X(id_curr);
@@ -129,14 +135,15 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let m55 = parts[28].parse::<dtype>().expect("Failed to parse g20");
                 let m56 = parts[29].parse::<dtype>().expect("Failed to parse g20");
                 let m66 = parts[30].parse::<dtype>().expect("Failed to parse g20");
+                // Note have to permute here - g2o stores with translation first, factrs with rotation first
                 #[rustfmt::skip]
                 let inf = Matrix6::new(
-                    m44, m45, m46, m14, m15, m16,
-                    m45, m55, m56, m24, m25, m26,
-                    m46, m56, m66, m34, m35, m36,
-                    m14, m24, m34, m11, m12, m13,
-                    m15, m25, m35, m12, m22, m23,
-                    m16, m26, m36, m13, m23, m33,
+                    m44, m45, m46, m14, m24, m34,
+                    m45, m55, m56, m15, m25, m35,
+                    m46, m56, m66, m16, m25, m36,
+                    m14, m15, m16, m11, m12, m13,
+                    m24, m25, m26, m12, m22, m23,
+                    m34, m35, m36, m13, m23, m33,
                 );
 
                 let rot = SO3::from_xyzw(qx, qy, qz, qw);

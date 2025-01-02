@@ -1,4 +1,5 @@
 /target
+/build
 .vscode
 *.g2o
 *.svg

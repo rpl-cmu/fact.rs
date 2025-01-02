@@ -1,3 +1,8 @@
+use std::{
+    fmt::{self, Write},
+    marker::PhantomData,
+};
+
 use pad_adapter::PadAdapter;
 
 use super::{DefaultSymbolHandler, KeyFormatter, Symbol, TypedSymbol};
@@ -9,11 +14,6 @@ use crate::{
     noise::{NoiseModel, UnitNoise},
     residuals::Residual,
     robust::{RobustCost, L2},
-};
-
-use std::{
-    fmt::{self, Write},
-    marker::PhantomData,
 };
 
 /// Main structure to represent a factor in the graph.
@@ -55,6 +55,7 @@ use std::{
 /// let factor = FactorBuilder::new1(residual,
 ///     X(0)).noise(noise).robust(robust).build();
 /// ```
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Factor {
     keys: Vec<Key>,
@@ -121,7 +122,8 @@ impl fmt::Debug for Factor {
 
 /// Formatter for a factor
 ///
-/// Specifically, this can be used if custom symbols are desired. See `tests/custom_key` for examples.
+/// Specifically, this can be used if custom symbols are desired. See
+/// `tests/custom_key` for examples.
 pub struct FactorFormatter<'f, KF> {
     factor: &'f Factor,
     kf: PhantomData<KF>,

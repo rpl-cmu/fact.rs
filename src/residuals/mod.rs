@@ -6,16 +6,21 @@
 //! # Examples
 //! Here we make a custom residual for a z-position measurement.
 //! The `DimIn` and `DimOut` are the dimensions in and out, respectively,
-//! while `V1` represents the type of the variable used (and more higher numbered residuals have `V2`, `V3`, etc).
+//! while `V1` represents the type of the variable used (and more higher
+//! numbered residuals have `V2`, `V3`, etc).
 //!
-//! `Differ` is the object that computes our auto-differentation. Out of the box factrs comes
-//! with [ForwardProp](factrs::linalg::ForwardProp) and [NumericalDiff](factrs::linalg::NumericalDiff).
-//! We recommend [ForwardProp](factrs::linalg::ForwardProp) as it should be faster and more accurate.
+//! `Differ` is the object that computes our auto-differentation. Out of the box
+//! factrs comes with [ForwardProp](factrs::linalg::ForwardProp) and
+//! [NumericalDiff](factrs::linalg::NumericalDiff). We recommend
+//! [ForwardProp](factrs::linalg::ForwardProp) as it should be faster and more
+//! accurate.
 //!
-//! Finally, the residual is defined through a single function that is generic over the datatype. That's it! factrs handles the rest for you.
+//! Finally, the residual is defined through a single function that is generic
+//! over the datatype. That's it! factrs handles the rest for you.
 //!
 //! ```
 //! use std::fmt;
+//!
 //! use factrs::{
 //!     dtype,
 //!     linalg::{Const, ForwardProp, Numeric, VectorX},
@@ -23,10 +28,10 @@
 //!     variables::SE3,
 //! };
 //!
-//! #[derive(Debug)]
+//! #[derive(Debug, Clone)]
 //! # #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 //! struct ZResidual {
-//!     value: dtype
+//!     value: dtype,
 //! }
 //!
 //! impl fmt::Display for ZResidual {
@@ -48,10 +53,9 @@
 //! }
 //! ```
 mod traits;
-pub use traits::{Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6};
-
 #[cfg(feature = "serde")]
 pub use traits::tag_residual;
+pub use traits::{Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6};
 
 mod prior;
 pub use prior::PriorResidual;

@@ -1,17 +1,16 @@
-use pad_adapter::PadAdapter;
 use std::{
     fmt::{Debug, Write},
     marker::PhantomData,
 };
 
+use faer::sparse::SymbolicSparseColMat;
+use pad_adapter::PadAdapter;
+
+use super::{DefaultSymbolHandler, Idx, KeyFormatter, Values, ValuesOrder};
 // Once "debug_closure_helpers" is stabilized, we won't need this anymore
 // Need custom debug to handle pretty key printing at the moment
 // Pad adapter helps with the pretty printing
 use crate::containers::factor::FactorFormatter;
-
-use faer::sparse::SymbolicSparseColMat;
-
-use super::{DefaultSymbolHandler, Idx, KeyFormatter, Values, ValuesOrder};
 use crate::{containers::Factor, dtype, linear::LinearGraph};
 
 /// Structure to represent a nonlinear factor graph
@@ -38,7 +37,7 @@ use crate::{containers::Factor, dtype, linear::LinearGraph};
 /// let mut graph = Graph::new();
 /// graph.add_factor(factor);
 /// ```
-#[derive(Default)]
+#[derive(Default, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Graph {
     factors: Vec<Factor>,
@@ -116,7 +115,8 @@ impl Debug for Graph {
 
 /// Formatter for a graph
 ///
-/// Specifically, this can be used if custom symbols are desired. See `tests/custom_key` for examples.
+/// Specifically, this can be used if custom symbols are desired. See
+/// `tests/custom_key` for examples.
 pub struct GraphFormatter<'g, KF> {
     graph: &'g Graph,
     kf: PhantomData<KF>,
