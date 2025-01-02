@@ -1,7 +1,7 @@
 # factrs
 
 [![crates.io](https://img.shields.io/crates/v/factrs.svg)](https://crates.io/crates/factrs)
-[![ci](https://github.com/rpl-cmu/factrs/actions/workflows/rust.yml/badge.svg)](https://github.com/rpl-cmu/factrs/actions/workflows/rust.yml)
+[![ci](https://github.com/rpl-cmu/factrs/actions/workflows/ci.yml/badge.svg)](https://github.com/rpl-cmu/factrs/actions/workflows/ci.yml)
 [![docs.rs](https://docs.rs/factrs/badge.svg)](https://docs.rs/factrs)
 
 factrs is a nonlinear least squares optimization library over factor graphs written in Rust.
@@ -23,7 +23,7 @@ We recommend you checkout the [docs](https://docs.rs/factrs/latest/factrs/) for 
 # Examples
 There's a number of examples found in the [examples](/examples/) folder, including loading g20 files, serialization, and custom factors.
 
-To run any of the examples, simply clone this repository and run,
+To a simple pose graph optimization, simply clone this repository and run,
 ```bash
 cargo run --release --example g20 ./examples/data/M3500.g20
 ```
@@ -83,6 +83,41 @@ fn main() {
     println!("Results {:#}", result);
 }
 ```
+</details>
+
+# Benchmarks
+Benchmarks were ran on a 12th Gen Intel i9 and are all single-threaded (for now). factrs has competitive performance with other libraries for many problems, but is marginally slower for very large problems. Current benchmarks include [gtsam](https://github.com/borglab/gtsam/) and [tinysolver-rs](https://github.com/powei-lin/tiny-solver-rs).
+
+### 2D Benchmarks
+| benchmark  | args      | fastest   | median    | mean      |
+|------------|-----------|-----------|-----------|-----------|
+| factrs     | M3500.g2o | 86.22 ms  | 87.87 ms  | 88.17 ms  |
+| gtsam      | M3500.g2o | 160.44 ms | 162.52ms  | 162.33ms  |
+| tinysolver | M3500.g2o | 132.71 ms | 138.20 ms | 138.35 ms |
+
+### 3D Benchmarks
+| benchmark | args               | fastest   | median    | mean      |
+|-----------|--------------------|-----------|-----------|-----------|
+| factrs    | sphere2500.g2o     | 488.74 ms | 495.06 ms | 493.41 ms |
+| gtsam     | sphere2500.g2o     | 397.97    | 401.94    | 403.63    |
+| factrs    | parking-garage.g2o | 406.54 ms | 408.21 ms | 408.03 ms |
+| gtsam     | parking-garage.g2o | 113.64    | 114.55    | 114.55    |
+
+
+To run the rust benchmarks, simply run,
+```bash
+cargo bench -p factrs-bench
+```
+and the C++ benchmarks can be run with,
+```bash
+cmake -B build factrs-bench/cpp
+cmake --build build
+./build/bench
+```
+
+both of which have alias commands in the root justfile.
+
+There is still some benchmarking work to be done and we'd love some help if you'd like an easy way to contribute! There's a few libraries that could be added, specifically ceres and sophus-rs. Additionally, it'd be nice if all benchmarks had a rust frontend using FFI for easier running - this was begun in the `easton/benches` branch.
 
 # Installation
 Simply add via cargo as you do any rust dependency,

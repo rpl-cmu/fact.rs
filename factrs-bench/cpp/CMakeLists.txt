@@ -9,30 +9,22 @@ include(FetchContent)
 set(CMAKE_BUILD_TYPE RELEASE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# ------------------------- Include Eigen ------------------------- #
-# set(BUILD_TESTING OFF CACHE BOOL "")
-# set(EIGEN_BUILD_TESTING OFF CACHE BOOL "")
-# set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "")
-# set(EIGEN_BUILD_DOC OFF CACHE BOOL "")
-# FetchContent_Declare(
-#     Eigen3
-#     GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-#     GIT_TAG        3.4.0
-#     GIT_SHALLOW TRUE
-#     GIT_PROGRESS   TRUE
-#     USES_TERMINAL_DOWNLOAD TRUE
-#     OVERRIDE_FIND_PACKAGE
-# )
-# FetchContent_MakeAvailable(Eigen3)
+# ------------------------- Include Benchmarking library ------------------------- #
+FetchContent_Declare(
+    nanobench
+    GIT_REPOSITORY https://github.com/martinus/nanobench.git
+    GIT_TAG v4.3.11
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS   TRUE
+    USES_TERMINAL_DOWNLOAD TRUE
+)
+FetchContent_MakeAvailable(nanobench)
 
 # ------------------------- Include GTSAM ------------------------- #
 # Enable features to make closer to factrs default
 set(GTSAM_USE_QUATERNIONS ON CACHE BOOL "")
 set(GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR ON CACHE BOOL "")
 set(GTSAM_SLOW_BUT_CORRECT_EXPMAP ON CACHE BOOL "")
-set(GTSAM_BUILD_WITH_MARCH_NATIVE ON CACHE BOOL "")
-set(BUILD_SHARED_LIBS ON CACHE BOOL "")
-set(GTSAM_BUILD_TYPE_POSTFIXES OFF CACHE BOOL "")
 # Turn off extra building
 set(GTSAM_BUILD_TESTS OFF CACHE BOOL "")
 set(GTSAM_BUILD_DOCS OFF CACHE BOOL "")
@@ -41,11 +33,14 @@ set(GTSAM_INSTALL_MATLAB_TOOLBOX OFF CACHE BOOL "")
 set(GTSAM_BUILD_UNSTABLE OFF CACHE BOOL "")
 set(GTSAM_BUILD_EXAMPLES OFF CACHE BOOL "")
 set(GTSAM_BUILD_EXAMPLES_ALWAYS OFF CACHE BOOL "")
-# set(GTSAM_USE_SYSTEM_EIGEN ON CACHE BOOL "")
 
-# TODO: Figure out how to get tbb working
+# use single threaded comparisons
 set(GTSAM_WITH_TBB OFF CACHE BOOL "")
+
+# disable some gtsam warnings we don't care about
 add_compile_options(-Wno-deprecated-declarations)
+add_compile_options(-Wno-unused-but-set-variable)
+add_compile_options(-Wno-cpp)
 
 FetchContent_Declare(
     GTSAM
@@ -57,7 +52,5 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(GTSAM)
 
-# target_compile_options(gtsam PRIVATE -Wno-deprecated-declarations)
-
-add_executable(bench_gtsam bench_gtsam.cpp)
-target_link_libraries(bench_gtsam PRIVATE gtsam)
+add_executable(bench bench.cpp)
+target_link_libraries(bench PRIVATE gtsam nanobench)
