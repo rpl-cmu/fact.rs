@@ -23,7 +23,7 @@ We recommend you checkout the [docs](https://docs.rs/factrs/latest/factrs/) for 
 # Examples
 There's a number of examples found in the [examples](/examples/) folder, including loading g20 files, serialization, and custom factors.
 
-To a simple pose graph optimization, simply clone this repository and run,
+To run a simple pose graph optimization, simply clone this repository and run,
 ```bash
 cargo run --release --example g20 ./examples/data/M3500.g20
 ```

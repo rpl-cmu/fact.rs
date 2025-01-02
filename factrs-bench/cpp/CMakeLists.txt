@@ -54,3 +54,4 @@ FetchContent_MakeAvailable(GTSAM)
 
 add_executable(bench bench.cpp)
 target_link_libraries(bench PRIVATE gtsam nanobench)
+set_property(TARGET bench PROPERTY CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
