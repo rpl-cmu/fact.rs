@@ -1,10 +1,9 @@
-use proc_macro2::Span;
-use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-use quote::ToTokens;
-use syn::parse_quote;
-use syn::ExprCast;
-use syn::{parse::Parse, punctuated::Punctuated, Expr, Ident, Token};
+use proc_macro2::{Span, TokenStream as TokenStream2};
+use quote::{format_ident, quote, ToTokens};
+use syn::{
+    parse::Parse, parse_quote, punctuated::Punctuated, spanned::Spanned, Expr, ExprCast, Ident,
+    Token,
+};
 
 pub struct Factor {
     residual: Expr,
@@ -81,10 +80,30 @@ impl Parse for Factor {
             let m = quote!(factrs::noise);
             match &input[2] {
                 Expr::Cast(ExprCast { expr, ty, .. }) => {
-                    match ty.to_token_stream().to_string().as_str() {
-                        "std" => Some(parse_quote!(#m::GaussianNoise::from_scalar_sigma(#expr))),
-                        "cov" => Some(parse_quote!(#m::GaussianNoise::from_scalar_cov(#expr))),
+                    // Make sure it's a cov or std cast
+                    let ty = match ty.to_token_stream().to_string().as_str() {
+                        "cov" => Ident::new("cov", ty.span()),
+                        "std" | "sigma" | "sig" => Ident::new("sigma", ty.span()),
                         _ => return Err(syn::Error::new_spanned(ty, "Unknown cast for noise")),
+                    };
+
+                    // Check if it's a tuple or a single variable
+                    match expr.as_ref() {
+                        Expr::Tuple(t) => {
+                            if t.elems.len() != 2 {
+                                return Err(syn::Error::new_spanned(
+                                    t,
+                                    "Expected tuple with two elements for split std/cov",
+                                ));
+                            }
+                            let (a, b) = (&t.elems[0], &t.elems[1]);
+                            let func = format_ident!("from_split_{}", ty);
+                            Some(parse_quote!(#m::GaussianNoise::#func(#a, #b)))
+                        }
+                        _ => {
+                            let func = format_ident!("from_scalar_{}", ty);
+                            Some(parse_quote!(#m::GaussianNoise::#func(#expr)))
+                        }
                     }
                 }
                 Expr::Infer(_) => Some(parse_quote!(#m::UnitNoise)),

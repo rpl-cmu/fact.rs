@@ -274,6 +274,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
 #[cfg(test)]
 mod tests {
 
+    use factrs_proc::fac;
     use matrixcompare::assert_matrix_eq;
 
     use super::*;
@@ -307,10 +308,7 @@ mod tests {
         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
         let robust = GemanMcClure::default();
 
-        let factor = FactorBuilder::new1(residual, X(0))
-            .noise(noise)
-            .robust(robust)
-            .build();
+        let factor: Factor = fac![residual, X(0), noise, robust];
 
         let f = |x: VectorVar3| {
             let mut values = Values::new();
@@ -340,10 +338,7 @@ mod tests {
         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
         let robust = GemanMcClure::default();
 
-        let factor = FactorBuilder::new2(residual, X(0), X(1))
-            .noise(noise)
-            .robust(robust)
-            .build();
+        let factor: Factor = fac![residual, (X(0), X(1)), noise, robust];
 
         let mut values = Values::new();
         values.insert_unchecked(X(0), x.clone());
