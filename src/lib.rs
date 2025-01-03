@@ -37,14 +37,10 @@
 //! # Example
 //! ```
 //! use factrs::{
-//!    assign_symbols,
-//!    containers::{FactorBuilder, Graph, Values},
-//!    noise::GaussianNoise,
-//!    optimizers::GaussNewton,
-//!    residuals::{BetweenResidual, PriorResidual},
-//!    robust::Huber,
-//!    traits::*,
-//!    variables::SO2,
+//!     assign_symbols,
+//!     core::{BetweenResidual, GaussNewton, Graph, Huber, PriorResidual, Values, SO2},
+//!     fac,
+//!     traits::*,
 //! };
 //!
 //! // Assign symbols to variable types
@@ -60,23 +56,24 @@
 //!
 //! // Make the factors & insert into graph
 //! let mut graph = Graph::new();
-//!
 //! let res = PriorResidual::new(x.clone());
-//! let factor = FactorBuilder::new1(res, X(0)).build();
+//! let factor = fac![res, X(0)];
 //! graph.add_factor(factor);
 //!
 //! let res = BetweenResidual::new(y.minus(&x));
-//! let noise = GaussianNoise::from_scalar_sigma(0.1);
-//! let robust = Huber::default();
-//! let factor = FactorBuilder::new2(res, X(0), X(1))
-//!     .noise(noise)
-//!     .robust(robust)
-//!     .build();
+//! let factor = fac![res, (X(0), X(1)), 0.1 as std, Huber::default()];
+//! // fac! is syntactic sugar for the following
+//! // let noise = GaussianNoise::from_scalar_sigma(0.1);
+//! // let factor = FactorBuilder::new2(res, X(0), X(1))
+//! //     .noise(GaussianNoise::from_scalar_sigma(0.1))
+//! //     .robust(Huber::default())
+//! //     .build();
 //! graph.add_factor(factor);
 //!
 //! // Optimize!
 //! let mut opt: GaussNewton = GaussNewton::new(graph);
-//! let result = opt.optimize(values);
+//! let result = opt.optimize(values).unwrap();
+//! println!("Results {:#}", result);
 //! ```
 
 #![warn(clippy::unwrap_used)]

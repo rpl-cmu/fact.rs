@@ -51,6 +51,42 @@ impl<const N: usize> GaussianNoise<N> {
         Self { sqrt_inf }
     }
 
+    /// Create from split scalar sigmas.
+    ///
+    /// Will apply the first scalar to the first N/2 elements and the second
+    /// scalar to the last N/2 elements. In the case of an odd N, the first N/2
+    /// elements will have one less element than the last N/2 elements.
+    pub fn from_split_sigma(sigma1: dtype, sigma2: dtype) -> Self {
+        let mut sqrt_inf = Matrix::<N, N>::zeros();
+        let inf1 = 1.0 / sigma1;
+        let inf2 = 1.0 / sigma2;
+        for i in 0..N / 2 {
+            sqrt_inf[(i, i)] = inf1;
+        }
+        for i in N / 2..N {
+            sqrt_inf[(i, i)] = inf2;
+        }
+        Self { sqrt_inf }
+    }
+
+    /// Create from split scalar covariances.
+    ///
+    /// Will apply the first scalar to the first N/2 elements and the second
+    /// scalar to the last N/2 elements. In the case of an odd N, the first N/2
+    /// elements will have one less element than the last N/2 elements.
+    pub fn from_split_cov(cov1: dtype, cov2: dtype) -> Self {
+        let mut sqrt_inf = Matrix::<N, N>::zeros();
+        let inf1 = 1.0 / cov1.sqrt();
+        let inf2 = 1.0 / cov2.sqrt();
+        for i in 0..N / 2 {
+            sqrt_inf[(i, i)] = inf1;
+        }
+        for i in N / 2..N {
+            sqrt_inf[(i, i)] = inf2;
+        }
+        Self { sqrt_inf }
+    }
+
     /// Create a diagonal Gaussian noise from a vector of sigmas.
     pub fn from_vec_sigma(sigma: VectorView<N>) -> Self {
         let sqrt_inf = Matrix::<N, N>::from_diagonal(&sigma.map(|x| 1.0 / x));

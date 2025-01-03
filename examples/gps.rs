@@ -15,7 +15,7 @@ A simple 2D pose slam example with "GPS" measurements
 use factrs::variables::{VectorVar2, SE2};
 use factrs::{
     assign_symbols,
-    core::{BetweenResidual, GaussNewton, GaussianNoise, Graph, Values},
+    core::{BetweenResidual, GaussNewton, Graph, Values},
     dtype, fac,
     linalg::{Const, ForwardProp, Numeric, NumericalDiff, VectorX},
     residuals::Residual1,
@@ -87,10 +87,9 @@ fn main() {
     let mut graph = Graph::new();
 
     // Add odometry factors
-    let noise = GaussianNoise::<3>::from_diag_covs(0.1, 0.2, 0.2);
     let res = BetweenResidual::new(SE2::new(0.0, 2.0, 0.0));
-    let odometry_01 = fac![res.clone(), (X(0), X(1)), noise.clone()];
-    let odometry_12 = fac![res, (X(1), X(2)), noise];
+    let odometry_01 = fac![res.clone(), (X(0), X(1)), (0.1, 0.2) as cov];
+    let odometry_12 = fac![res, (X(1), X(2)), (0.1, 0.2) as cov];
     graph.add_factor(odometry_01);
     graph.add_factor(odometry_12);
 

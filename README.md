@@ -42,9 +42,9 @@ Additionally, we recommend checking out the [tests](/tests/) folder for more exa
 
 ```rust
 use factrs::{
-    core::{
-        assign_symbols, fac, BetweenResidual, GaussNewton, Graph, Huber, PriorResidual, Values, SO2,
-    },
+    assign_symbols,
+    core::{BetweenResidual, GaussNewton, Graph, Huber, PriorResidual, Values, SO2},
+    fac,
     traits::*,
 };
 
@@ -67,13 +67,12 @@ fn main() {
     graph.add_factor(factor);
 
     let res = BetweenResidual::new(y.minus(&x));
-    let robust = Huber::default();
-    let factor = fac![res, (X(0), X(1)), 0.1 as std, robust];
+    let factor = fac![res, (X(0), X(1)), 0.1 as std, Huber::default()];
     // fac! is syntactic sugar for the following
     // let noise = GaussianNoise::from_scalar_sigma(0.1);
     // let factor = FactorBuilder::new2(res, X(0), X(1))
-    //     .noise(noise)
-    //     .robust(robust)
+    //     .noise(GaussianNoise::from_scalar_sigma(0.1))
+    //     .robust(Huber::default())
     //     .build();
     graph.add_factor(factor);
 
