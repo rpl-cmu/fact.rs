@@ -53,8 +53,8 @@ fn check_type(input: &ItemImpl) -> syn::Result<BoxedTypes> {
 ///
 /// ### [Variable](factrs::traits::Variable)
 /// If serde is disabled, does nothing. Otherwise, it does the following:
-/// - If the only generic is the datatype (and potentially a const usize
-///   generic), add tag for serialization
+/// - Checks there is a single generic for the datatype
+/// - Add tag for serialization
 /// - Add tag for serializing [PriorResidual<Type>](factrs::core::PriorResidual)
 ///   and [BetweenResidual<Type>](factrs::core::BetweenResidual) as well.
 ///
@@ -66,7 +66,7 @@ fn check_type(input: &ItemImpl) -> syn::Result<BoxedTypes> {
 ///
 /// ### [Noise](factrs::traits::Noise)
 /// If serde is disabled, does nothing. Otherwise, it will tag the noise model
-/// for serialization, up to size 20.
+/// for serialization, up to size 32.
 ///
 /// ### [Robust](factrs::traits::Robust)
 /// If serde is disabled, does nothing. Otherwise, it will tag the robust

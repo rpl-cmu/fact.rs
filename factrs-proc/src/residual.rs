@@ -32,7 +32,7 @@ pub fn mark(mut item: ItemImpl) -> TokenStream2 {
     let residual_values = format_ident!("residual{}_values", num);
     let residual_jacobian = format_ident!("residual{}_jacobian", num);
 
-    // If we should add typetag
+    // If we should add typetag::Tagged to the generic bounds
     let typetag = if cfg!(feature = "serde") {
         // Add where clauses to all impl
         let all_type_params: Vec<_> = item.generics.type_params().cloned().collect();

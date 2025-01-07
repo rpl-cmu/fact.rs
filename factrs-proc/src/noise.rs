@@ -1,5 +1,4 @@
-use proc_macro2::Ident;
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::{Ident, TokenStream as TokenStream2};
 use quote::quote;
 use syn::{GenericParam, ItemImpl, Type, TypePath};
 
@@ -40,7 +39,7 @@ pub fn mark(item: ItemImpl) -> TokenStream2 {
         // If one generic and it's const, do first 20
         1 => {
             if let GenericParam::Const(_) = item.generics.params.first().unwrap() {
-                for i in 1usize..=20 {
+                for i in 1usize..=32 {
                     let name_str = format!("{}<{}>", name, i);
                     expanded.extend(quote!(
                         typetag::__private::inventory::submit! {

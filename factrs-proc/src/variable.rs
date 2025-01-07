@@ -1,11 +1,6 @@
-use proc_macro2::Ident;
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::{Ident, TokenStream as TokenStream2};
 use quote::{quote, ToTokens};
-use syn::parse_quote;
-use syn::ConstParam;
-use syn::Error;
-use syn::GenericParam;
-use syn::{ItemImpl, Type, TypePath};
+use syn::{Error, ItemImpl, Type, TypePath};
 
 fn type_name(mut ty: &Type) -> Option<Ident> {
     loop {
@@ -56,28 +51,7 @@ pub fn mark(item: ItemImpl) -> TokenStream2 {
                 }
             ));
         }
-        // With a single const generic
-        2 => {
-            let first_generic = item.generics.params.first().unwrap();
-            if let GenericParam::Const(ConstParam { ident, .. }) = first_generic {
-                let format = format!("{}<{{}}>", name);
-                // let format = quote! { #name<{}> }.to_string();
-                expanded.extend(quote! {
-                    impl<const #ident: usize> typetag::Tagged for #name<#ident> {
-                        fn tag() -> String {
-                            format!(#format, #ident)
-                        }
-                    }
-                });
-                for i in 1usize..=20 {
-                    let name_str = format!("{}<{}>", name, i);
-                    let name_qt = parse_quote!(#name<#i>);
-                    expanded.extend(tag_all(&name_qt, &name_str));
-                }
-            }
-        }
         // Anymore and it's up to the user
-        // TODO: Could at least implement tagged here
         _ => {}
     }
 
