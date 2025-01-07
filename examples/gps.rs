@@ -12,7 +12,6 @@ A simple 2D pose slam example with "GPS" measurements
 #![allow(unused_imports)]
 // Our state will be represented by SE2 -> theta, x, y
 // VectorVar2 is a newtype around Vector2 for optimization purposes
-use factrs::variables::{VectorVar2, SE2};
 use factrs::{
     assign_symbols,
     core::{BetweenResidual, GaussNewton, Graph, Values},
@@ -20,6 +19,7 @@ use factrs::{
     linalg::{Const, ForwardProp, Numeric, NumericalDiff, VectorX},
     residuals::Residual1,
     traits::*,
+    variables::{VectorVar2, SE2},
 };
 
 #[derive(Clone, Debug)]

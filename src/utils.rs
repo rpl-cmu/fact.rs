@@ -61,7 +61,8 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let m22 = parts[9].parse::<dtype>().expect("Failed to parse g20");
                 let m23 = parts[10].parse::<dtype>().expect("Failed to parse g20");
                 let m33 = parts[11].parse::<dtype>().expect("Failed to parse g20");
-                // Note have to permute here - g2o stores with translation first, factrs with rotation first
+                // Note have to permute here - g2o stores with translation first, factrs with
+                // rotation first
                 #[rustfmt::skip]
                 let inf = Matrix3::new(
                     m33, m13, m23,
@@ -135,7 +136,8 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let m55 = parts[28].parse::<dtype>().expect("Failed to parse g20");
                 let m56 = parts[29].parse::<dtype>().expect("Failed to parse g20");
                 let m66 = parts[30].parse::<dtype>().expect("Failed to parse g20");
-                // Note have to permute here - g2o stores with translation first, factrs with rotation first
+                // Note have to permute here - g2o stores with translation first, factrs with
+                // rotation first
                 #[rustfmt::skip]
                 let inf = Matrix6::new(
                     m44, m45, m46, m14, m24, m34,

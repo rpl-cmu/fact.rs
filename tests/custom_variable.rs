@@ -74,11 +74,12 @@ factrs::test_variable!(MyVar);
 
 #[cfg(feature = "serde")]
 mod ser_de {
-    use super::*;
     use factrs::{
         assert_variable_eq, containers::Values, residuals::PriorResidual, symbols::X,
         traits::Residual, variables::VariableSafe,
     };
+
+    use super::*;
 
     // Make sure it serializes properly
     #[test]
