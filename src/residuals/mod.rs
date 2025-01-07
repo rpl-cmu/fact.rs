@@ -34,12 +34,6 @@
 //!     value: dtype,
 //! }
 //!
-//! impl fmt::Display for ZResidual {
-//!     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//!         write!(f, "{:?}", self)
-//!     }
-//! }
-//!
 //! #[factrs::mark]
 //! impl residuals::Residual1 for ZResidual {
 //!     type DimIn = Const<6>;
