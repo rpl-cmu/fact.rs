@@ -92,8 +92,8 @@ extern crate self as factrs;
 /// usage would be
 /// ```
 /// # use factrs::{assign_symbols, fac, core::{SO2, PriorResidual, BetweenResidual}, traits::*};
-/// # let prior = BetweenResidual::new(SO2::identity());
-/// # let between = PriorResidual::new(SO2::identity());
+/// # let prior = PriorResidual::new(SO2::identity());
+/// # let between = BetweenResidual::new(SO2::identity());
 /// # assign_symbols!(X: SO2);
 /// let prior_factor = fac![prior, X(0)];
 /// let between_factor = fac![between, (X(0), X(1))];
@@ -106,8 +106,11 @@ extern crate self as factrs;
 /// # assign_symbols!(X: SO2);
 /// let noise = GaussianNoise::from_scalar_sigma(0.1);
 /// let f1a = fac![prior, X(0), noise];
+/// # let prior = PriorResidual::new(SO2::identity());
 /// let f1b = fac![prior, X(0), 0.1 as std];
+/// # let prior = PriorResidual::new(SO2::identity());
 /// let f2 = fac![prior, X(0), 0.1 as cov];
+/// # let prior = PriorResidual::new(SO2::identity());
 /// let f3 = fac![prior, X(0), (0.1, 0.3) as std];
 /// ```
 /// where `f1a` and `f1b` are identical, and where `f3` uses
@@ -121,6 +124,7 @@ extern crate self as factrs;
 /// # let prior = PriorResidual::new(SO2::identity());
 /// # assign_symbols!(X: SO2);
 /// let f1 = fac![prior, X(0), 0.1 as std, Huber::default()];
+/// # let prior = PriorResidual::new(SO2::identity());
 /// let f2 = fac![prior, X(0), _, Huber::default()];
 /// ```
 /// where `f2` uses [UnitNoise](factrs::noise::UnitNoise) as the noise model.
