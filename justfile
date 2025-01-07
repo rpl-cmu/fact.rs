@@ -15,10 +15,10 @@ profile:
 
 # build docs with latex support
 doc:
-    RUSTDOCFLAGS="--cfg docsrs --html-in-header $PWD/assets/katex-header.html" cargo doc --features="serde rerun"
+    RUSTDOCFLAGS="--cfg docsrs --html-in-header $PWD/assets/katex-header.html" cargo doc --features="serde rerun" -Zunstable-options -Zrustdoc-scrape-examples
 
 bacon-doc:
-    RUSTDOCFLAGS="--cfg docsrs --html-in-header $PWD/assets/katex-header.html" bacon doc --features="serde rerun"
+    RUSTDOCFLAGS="--cfg docsrs --html-in-header $PWD/assets/katex-header.html" bacon doc --features="serde rerun" -- -Zunstable-options -Zrustdoc-scrape-examples
 
 # ---------------------- Easton specific helpers that work on my system ---------------------- #
 # tune the system for benchmarking using pyperf
