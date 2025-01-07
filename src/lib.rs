@@ -1,5 +1,9 @@
-//! fact.rs is a nonlinear least squares optimization library over factor
-//! graphs, specifically geared for sensor fusion in robotics.
+//! fact.rs (pronounced factors) is a nonlinear least squares optimization
+//! library over factor graphs written in Rust.
+//!
+//! It is specifically geared toward sensor fusion in robotics. It aims to be
+//! fast, easy to use, and safe. The fact.rs API takes heavy inspiration from
+//! the [gtsam library](https://gtsam.org/).
 //!
 //! Currently, it supports the following features
 //! - Gauss-Newton & Levenberg-Marquadt Optimizers
@@ -7,7 +11,7 @@
 //!   Algebras
 //! - Automatic differentiation via dual numbers
 //! - Serialization of graphs & variables via optional serde support
-//! - Easy conversion to rerun types for simple visualization
+//! - Easy conversion to rerun types for straightforward visualization
 //!
 //! # Background
 //!
