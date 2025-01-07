@@ -43,7 +43,8 @@ impl Residual1 for GpsResidual {
     // Use forward propagation for differentiation
     type Differ = ForwardProp<<Self as Residual1>::DimIn>;
     // Alternatively, could use numerical differentiation (6 => 10^-6 as
-    // denominator) type Differ = NumericalDiff<6>;
+    // denominator)
+    // type Differ = NumericalDiff<6>;
 
     // The input variable type, input dimension of variable(s), and output dimension
     // of residual
@@ -75,8 +76,8 @@ impl Residual1 for GpsResidual {
     //     }
     // }
     // As a note - the above jacobian is only valid if running with the "left"
-    // feature disabled Switching to the left feature will change the jacobian
-    // used
+    // feature disabled
+    // Enabling the left feature will change the jacobian
 }
 
 // Here we assign X to always represent SE2 variables
