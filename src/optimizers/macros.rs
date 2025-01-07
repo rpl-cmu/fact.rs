@@ -1,4 +1,4 @@
-/// Test for optimizers
+/// Test optimizers
 ///
 /// This macro generates a handful of sanity tests for an optimizer. It tests
 /// - Prior optimization for VectorVar3, SO3, and SE3

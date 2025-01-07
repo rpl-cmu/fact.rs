@@ -17,7 +17,13 @@ members = ["factrs-bench", "factrs-proc"]
 exclude = ["factrs-typetag"]
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header", "assets/katex-header.html"]
+features = ["serde", "rerun"]
+rustdoc-args = [
+    "--cfg",
+    "docsrs",
+    "--html-in-header",
+    "assets/katex-header.html",
+]
 
 [dependencies]
 foldhash = "0.1.3"

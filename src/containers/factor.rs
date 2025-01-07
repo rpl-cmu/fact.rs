@@ -32,7 +32,8 @@ use crate::{
 /// - <blue>Robust Kernel</blue>: The robust kernel weights the error of the
 ///   factor, given by the traits in the [robust](crate::robust) module.
 ///
-/// To construct a factor, please see the [FactorBuilder] struct.
+/// The easiest way to construct a factor is using the [fac](factrs::fac) macro,
+/// or alternatively, using [FactorBuilder].
 ///
 /// During optimization the factor is linearized around a set of values into a
 /// [LinearFactor].

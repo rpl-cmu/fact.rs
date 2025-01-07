@@ -105,8 +105,8 @@ macro_rules! test_variable {
 /// Test (most of) the matrix lie group rules
 ///
 /// Specifically test
-/// - to/form matrix
-/// - hat/vee
+/// - to/from matrix are invertible
+/// - hat/vee are invertible
 /// - jacobian of rotation function with hat_swap
 #[macro_export]
 macro_rules! test_lie {

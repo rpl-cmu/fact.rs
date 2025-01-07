@@ -12,9 +12,7 @@ Currently, it supports the following features
 - Gauss-Newton & Levenberg-Marquadt Optimizers
 - Common Lie Groups supported (SO2, SO3, SE2, SE3) with optimization in Lie
   Algebras
-- Pose graph optimization and IMU preintegration
 - Automatic differentiation via dual numbers
-- First class support for robust kernels
 - Serialization of graphs & variables via optional serde support
 - Easy conversion to rerun types for straightforward visualization
 
@@ -68,12 +66,6 @@ fn main() {
 
     let res = BetweenResidual::new(y.minus(&x));
     let factor = fac![res, (X(0), X(1)), 0.1 as std, Huber::default()];
-    // fac! is syntactic sugar for the following
-    // let noise = GaussianNoise::from_scalar_sigma(0.1);
-    // let factor = FactorBuilder::new2(res, X(0), X(1))
-    //     .noise(GaussianNoise::from_scalar_sigma(0.1))
-    //     .robust(Huber::default())
-    //     .build();
     graph.add_factor(factor);
 
     // Optimize!

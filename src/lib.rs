@@ -6,7 +6,6 @@
 //! - Common Lie Groups supported (SO2, SO3, SE2, SE3) with optimization in Lie
 //!   Algebras
 //! - Automatic differentiation via dual numbers
-//! - First class support for robust kernels
 //! - Serialization of graphs & variables via optional serde support
 //! - Easy conversion to rerun types for simple visualization
 //!
@@ -62,12 +61,6 @@
 //!
 //! let res = BetweenResidual::new(y.minus(&x));
 //! let factor = fac![res, (X(0), X(1)), 0.1 as std, Huber::default()];
-//! // fac! is syntactic sugar for the following
-//! // let noise = GaussianNoise::from_scalar_sigma(0.1);
-//! // let factor = FactorBuilder::new2(res, X(0), X(1))
-//! //     .noise(GaussianNoise::from_scalar_sigma(0.1))
-//! //     .robust(Huber::default())
-//! //     .build();
 //! graph.add_factor(factor);
 //!
 //! // Optimize!
@@ -77,6 +70,7 @@
 //! ```
 
 #![warn(clippy::unwrap_used)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 /// The default floating point type used in the library
 #[cfg(not(feature = "f32"))]
@@ -91,6 +85,7 @@ pub type dtype = f32;
 // https://users.rust-lang.org/t/how-to-express-crate-path-in-procedural-macros/91274/10
 #[doc(hidden)]
 extern crate self as factrs;
+#[doc(inline)]
 pub use factrs_proc::{fac, mark};
 
 pub mod containers;
@@ -129,7 +124,7 @@ pub mod traits {
     };
 }
 
-/// Helper module to group together common types
+/// Helper module to group together most commonly used types
 ///
 /// Specifically, this contains everything that would be needed to implement a
 /// simple pose graph. While we recommend against it, for quick usage it can be
@@ -151,10 +146,36 @@ pub mod core {
 }
 
 #[cfg(feature = "rerun")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rerun")))]
+/// Conversion from fact.rs types to rerun types
+///
+/// Most the fact.rs types can be converted into rerun types for visualization
+/// purposes. The following conversions are supported,
+/// - VectorVar2 -> Vec2D, Points2D
+/// - VectorVar3 -> Vec3D, Points3D
+/// - SO2 -> Arrows2D
+/// - SE2 -> Arrows2D, Points2D
+/// - SO3 -> Rotation3D, Arrows3D
+/// - SE3 -> Transform3D, Arrows3D, Points3D
+///
+/// Furthermore, we can also convert iterators of these types into the
+/// corresponding rerun types. This is useful for visualizing multiple objects
+/// at once.
+/// - Iterator of VectorVar2 -> Points2D
+/// - Iterator of VectorVar3 -> Points3D
+/// - Iterator of SE2 -> Arrows2D, Points2D
+/// - Iterator of SE3 -> Arrows3D, Points3D
 pub mod rerun;
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+/// Macros to help with serde serialization
+///
+/// In case you are using a [marked](crate::mark) custom implementation along
+/// with serialization, you'll have to manually "tag" each type for
+/// serialization. This module provides a number of helper functions to do so.
 pub mod serde {
+    #[doc(inline)]
     pub use crate::{
         noise::tag_noise, residuals::tag_residual, robust::tag_robust, variables::tag_variable,
     };
