@@ -124,7 +124,7 @@ impl fmt::Debug for Factor {
 /// Formatter for a factor
 ///
 /// Specifically, this can be used if custom symbols are desired. See
-/// `tests/custom_key` for examples.
+/// [tests/custom_key](https://github.com/rpl-cmu/factrs/blob/dev/tests/custom_key.rs) for examples.
 pub struct FactorFormatter<'f, KF> {
     factor: &'f Factor,
     kf: PhantomData<KF>,

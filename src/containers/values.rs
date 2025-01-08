@@ -211,7 +211,7 @@ impl fmt::Display for Values {
 /// Formatter for values
 ///
 /// Specifically, this can be used if custom symbols are desired. See
-/// `tests/custom_key` for examples.
+/// [tests/custom_key](https://github.com/rpl-cmu/factrs/blob/dev/tests/custom_key.rs) for examples.
 pub struct ValuesFormatter<'v, KF> {
     values: &'v Values,
     kf: PhantomData<KF>,
