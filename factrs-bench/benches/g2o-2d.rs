@@ -14,10 +14,12 @@ fn factrs(bencher: Bencher, file: &str) {
 }
 
 // ------------------------- tiny-solver ------------------------- //
-use tiny_solver::{gauss_newton_optimizer, optimizer::Optimizer as TSOptimizer};
+use tiny_solver::{
+    gauss_newton_optimizer, helper::read_g2o as load_tiny_g2o, optimizer::Optimizer as TSOptimizer,
+};
 
 fn tinysolver(bencher: Bencher, file: &str) {
-    let (graph, init) = factrs_bench::load_tiny_g2o(&format!("{}{}", DATA_DIR, file));
+    let (graph, init) = load_tiny_g2o(&format!("{}{}", DATA_DIR, file));
     bencher.bench(|| {
         let gn = gauss_newton_optimizer::GaussNewtonOptimizer::new();
         let mut results = gn.optimize(&graph, &init, None);
