@@ -1,5 +1,7 @@
 use std::{fmt, ops};
 
+use simba::scalar::SubsetOf;
+
 use super::VectorVar3;
 use crate::{
     dtype,
@@ -147,6 +149,27 @@ impl<T: Numeric> Variable for SE3<T> {
             rot: SO3::<dtype>::dual_exp(idx),
             xyz: VectorVar3::<dtype>::dual_exp(idx + 3).into(),
         }
+    }
+
+    // Using the rotation matrix here saves on A LOT of computation in the
+    // DualVector IE there's a lot of zeros that are there when doing it using
+    // quat multiplication
+    fn dual<N: DimName>(&self, idx: usize) -> Self::Alias<DualVector<N>>
+    where
+        AllocatorBuffer<N>: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+        DualVector<N>: Copy + SupersetOf<Self::T>,
+        Self::T: SubsetOf<dtype>,
+    {
+        // Use SO3 to do the rot
+        let rot = self.rot.dual::<N>(idx);
+
+        // Manually do xyz to speed things up
+        let id: Vector3<_> = VectorVar3::<dtype>::dual_exp(idx + 3).into();
+        let r = self.rot.to_matrix().cast::<DualVector<N>>();
+        let xyz = r * id + self.xyz.cast();
+
+        SE3 { rot, xyz }
     }
 }
 

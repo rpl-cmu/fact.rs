@@ -4,8 +4,8 @@ use crate::{
     dtype,
     linalg::{
         vectorx, AllocatorBuffer, Const, DefaultAllocator, Derivative, DimName, DualAllocator,
-        DualVector, Matrix3, MatrixView, Numeric, SupersetOf, Vector3, Vector4, VectorDim,
-        VectorView3, VectorViewX, VectorX,
+        DualVector, Matrix3, MatrixView, Numeric, SubsetOf, SupersetOf, Vector3, Vector4,
+        VectorDim, VectorView3, VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable},
 };
@@ -177,6 +177,7 @@ impl<T: Numeric> Variable for SO3<T> {
         }
     }
 
+    // Manually implement this to avoid repeated calls to exp
     fn dual_exp<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
@@ -201,6 +202,48 @@ impl<T: Numeric> Variable for SO3<T> {
         let w = DualVector::<N>::from_re(1.0);
 
         SO3::from_xyzw(x, y, z, w)
+    }
+
+    // Manually implement this to avoid repeated calls to compose
+    // Allows us to avoid all the multiplying of 0's in the dual vector
+    fn dual<N: DimName>(&self, idx: usize) -> Self::Alias<DualVector<N>>
+    where
+        AllocatorBuffer<N>: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+        DualVector<N>: Copy + SupersetOf<Self::T>,
+        Self::T: SubsetOf<dtype>,
+    {
+        let mut xyzw: Vector4<DualVector<N>> = self.xyzw.cast();
+        let x0_2: dtype = SubsetOf::<dtype>::to_superset(&self.xyzw.x) / 2.0;
+        let y0_2: dtype = SubsetOf::<dtype>::to_superset(&self.xyzw.y) / 2.0;
+        let z0_2: dtype = SubsetOf::<dtype>::to_superset(&self.xyzw.z) / 2.0;
+        let w0_2: dtype = SubsetOf::<dtype>::to_superset(&self.xyzw.w) / 2.0;
+
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx] = w0_2;
+        eps[idx + 1] = -z0_2;
+        eps[idx + 2] = y0_2;
+        xyzw.x.eps = Derivative::new(Some(eps));
+
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx] = z0_2;
+        eps[idx + 1] = w0_2;
+        eps[idx + 2] = -x0_2;
+        xyzw.y.eps = Derivative::new(Some(eps));
+
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx] = -y0_2;
+        eps[idx + 1] = x0_2;
+        eps[idx + 2] = w0_2;
+        xyzw.z.eps = Derivative::new(Some(eps));
+
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx] = -x0_2;
+        eps[idx + 1] = -y0_2;
+        eps[idx + 2] = -z0_2;
+        xyzw.w.eps = Derivative::new(Some(eps));
+
+        SO3 { xyzw }
     }
 }
 

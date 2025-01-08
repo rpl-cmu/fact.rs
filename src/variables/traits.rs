@@ -6,7 +6,7 @@ use crate::{
     dtype,
     linalg::{
         AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, MatrixDim,
-        MatrixViewDim, Numeric, SupersetOf, VectorDim, VectorViewX, VectorX,
+        MatrixViewDim, Numeric, SubsetOf, SupersetOf, VectorDim, VectorViewX, VectorX,
     },
 };
 
@@ -159,6 +159,7 @@ pub trait Variable: Clone + Sized + Display + Debug {
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
         DualVector<N>: Copy + SupersetOf<Self::T>,
+        Self::T: SubsetOf<dtype>,
     {
         // Setups tangent vector -> exp, then we compose here
         let casted: Self::Alias<DualVector<N>> = self.cast::<DualVector<N>>();
