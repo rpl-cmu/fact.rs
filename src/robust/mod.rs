@@ -7,9 +7,9 @@
 //! They can roughly be split into the following categories:
 //!
 //! | Name         | Loss Function | Weight Function | Asymptotic Behavior |
-//! |--------------|---------------|-----------------|---------------------|
-//! | L2           | $x^2 / 2$ | $1$ | Quadratic           |
-//! | L1           | $\|x\|$ | $1 / \|x\|$ | Linear              |
+//! |:---:         |:---:          |:---:            |:---:                |
+//! | L2           | $x^2 / 2$     | $1$             | Quadratic           |
+//! | L1           | $\|x\|$       | $1 / \|x\|$     | Linear              |
 //! | Huber $\begin{cases} \|x\| \leq k \\\\ \|x\| > k \end{cases}$ | $\begin{cases} x^2/2 \\\\ k(\|x\| - k/2) \end{cases}$ | $\begin{cases} 1 \\\\ k/\|x\| \end{cases}$ | Linear              |
 //! | Fair         | $c^2 \left(\frac{\|x\|}{c} - \ln(1 + \frac{\|x\|}{c})\right)$ | $1 / (1 + \frac{\|x\|}{c})$ | Linear              |
 //! | Cauchy       | $\frac{c^2}{2}\ln\left(1 + (x/c)^2\right)$ | $1 / (1 + (x/c)^2)$ | Constant            |
@@ -32,8 +32,7 @@ use crate::dtype;
 /// Represents a robust cost function \rho. Note that most robust cost functions
 /// use x^2 in some form, so rather than passing x, we pass x^2. If you'd like
 /// to implement your own kernel, we recommend using
-/// [NumericalDiff](crate::linalg::NumericalDiff) to check that the weight is
-/// correct.
+/// [test_robust](crate::test_robust) to ensure weight = loss'(d) / d
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait RobustCost: Debug + DynClone {
     /// Compute the loss \rho(x^2)
@@ -361,6 +360,11 @@ pub fn test_weight(robust: &impl RobustCost, d: dtype) {
     assert_scalar_eq!(got, actual, comp = abs, tol = TOL);
 }
 
+/// Test robust kernels
+///
+/// Specifically, test for,
+/// - The weight function = loss'(d) / d both near the origin and far away
+/// - The loss function at the origin is 0.0
 #[macro_export]
 macro_rules! test_robust {
     ($($robust:ident),*) => {

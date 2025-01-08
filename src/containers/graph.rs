@@ -116,7 +116,7 @@ impl Debug for Graph {
 /// Formatter for a graph
 ///
 /// Specifically, this can be used if custom symbols are desired. See
-/// `tests/custom_key` for examples.
+/// [tests/custom_key](https://github.com/rpl-cmu/factrs/blob/dev/tests/custom_key.rs) for examples.
 pub struct GraphFormatter<'g, KF> {
     graph: &'g Graph,
     kf: PhantomData<KF>,

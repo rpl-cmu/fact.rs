@@ -8,27 +8,6 @@ use crate::{
     optimizers::OptObserver,
     variables::{MatrixLieGroup, VariableDtype, VectorVar2, VectorVar3, SE2, SE3, SO2, SO3},
 };
-/*
-Each of our fact.rs types can be turned into a handful of rerun types. These include,
-
-VectorVar2 -> Vec2D, Points2D
-VectorVar3 -> Vec3D, Points3D
-
-SO2 -> Arrows2D
-SE2 -> Arrows2D, Points2D
-
-SO3 -> Rotation3D, Arrows3D
-SE3 -> Transform3D, Arrows3D, Points3D
-
-Furthermore, we can also convert iterators of these types into the corresponding rerun types. This is useful for visualizing multiple objects at once.
-
-VectorVar2 -> Points2D
-VectorVar3 -> Points3D
-
-SE2 -> Arrows2D, Points2D
-SE3 -> Arrows3D, Points3D
-
-*/
 
 // ------------------------- 2D Objects ------------------------- //
 // 2D Vectors
@@ -382,6 +361,15 @@ impl<'a> FromIterator<&'a SE3> for Points3D {
 }
 
 // ------------------------- Streamer ------------------------- //
+/// Rerun optimizer observer
+///
+/// Observer that can be plugged into an optimizer to record the state of the
+/// optimization at each optimization step. Generic V is the variable type and R
+/// is the rerun type.
+///
+/// See the observers field of either
+/// [GaussNewton](crate::optimizers::GaussNewton) or
+/// [LevenMarquardt](crate::optimizers::LevenMarquardt) for more information.
 pub struct RerunObserver<V, R>
 where
     V: VariableDtype + 'static,

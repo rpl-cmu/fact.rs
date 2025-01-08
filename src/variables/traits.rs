@@ -125,9 +125,9 @@ pub trait Variable: Clone + Sized + Display + Debug {
         other.inverse().compose(self)
     }
 
-    // TODO: This function is kind of ugly functions still
-    // Would be nice if it wasn't a static function, but I couldn't ever get it quite right
-    // Tried to add bound Self: Variable<T = DualVector<N>>, but it then I couldn't do custom impl
+    // TODO: This function is kind of ugly still
+    // It'd be nice if it used the dtype of the type itself instead of making a
+    // dtype with a generic
 
     /// Setup group element correctly using the tangent space
     ///

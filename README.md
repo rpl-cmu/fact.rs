@@ -1,24 +1,23 @@
-# factrs
+# fact.rs
 
-[![crates.io](https://img.shields.io/crates/v/factrs.svg)](https://crates.io/crates/factrs)
+[![minimum rustc 1.81](https://img.shields.io/badge/rustc-1.81+-red.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![crate](https://img.shields.io/crates/v/factrs.svg)](https://crates.io/crates/factrs)
+[![doc](https://docs.rs/factrs/badge.svg)](https://docs.rs/factrs)
 [![ci](https://github.com/rpl-cmu/factrs/actions/workflows/ci.yml/badge.svg)](https://github.com/rpl-cmu/factrs/actions/workflows/ci.yml)
-[![docs.rs](https://docs.rs/factrs/badge.svg)](https://docs.rs/factrs)
 
-factrs is a nonlinear least squares optimization library over factor graphs written in Rust.
+fact.rs (pronounced factors) is a nonlinear least squares optimization library over factor graphs written in Rust.
 
-It is specifically geared toward sensor fusion in robotics. It aims to be fast, easy to use, and safe. The factrs API takes heavy inspiration from the [gtsam library](https://gtsam.org/).
+It is specifically geared toward sensor fusion in robotics. It aims to be fast, easy to use, and safe. The fact.rs API takes heavy inspiration from the [gtsam library](https://gtsam.org/).
 
 Currently, it supports the following features
 - Gauss-Newton & Levenberg-Marquadt Optimizers
 - Common Lie Groups supported (SO2, SO3, SE2, SE3) with optimization in Lie
   Algebras
-- Pose graph optimization and IMU preintegration
 - Automatic differentiation via dual numbers
-- First class support for robust kernels
 - Serialization of graphs & variables via optional serde support
 - Easy conversion to rerun types for straightforward visualization
 
-We recommend you checkout the [docs](https://docs.rs/factrs/latest/factrs/) for more info.
+We recommend you checkout the [docs](https://docs.rs/factrs/latest/factrs/) for more info. For usage, simply add factrs to your `Cargo.toml` and start using it!
 
 # Examples
 There's a number of examples found in the [examples](/examples/) folder, including loading g20 files, serialization, and custom factors.
@@ -31,11 +30,11 @@ to visualize the optimization steps with [rerun](https://rerun.io) simply add `-
 
 Running the other examples can be done similarly,
 ```bash
-cargo run --release --example serde --features serde
 cargo run --release --example gps
+cargo run --release --example serde --features serde
 ``` 
 
-Additionally, we recommend checking out the [tests](/tests/) folder for more examples of custom noise models, residuals, robust kernels, and variables.
+Additionally, we recommend checking out the [tests](/tests/) folder for more examples of how to make custom noise models, residuals, robust kernels, and variables.
 
 <details>
 <summary>Full Example</summary>
@@ -68,12 +67,6 @@ fn main() {
 
     let res = BetweenResidual::new(y.minus(&x));
     let factor = fac![res, (X(0), X(1)), 0.1 as std, Huber::default()];
-    // fac! is syntactic sugar for the following
-    // let noise = GaussianNoise::from_scalar_sigma(0.1);
-    // let factor = FactorBuilder::new2(res, X(0), X(1))
-    //     .noise(GaussianNoise::from_scalar_sigma(0.1))
-    //     .robust(Huber::default())
-    //     .build();
     graph.add_factor(factor);
 
     // Optimize!
@@ -83,6 +76,40 @@ fn main() {
 }
 ```
 </details>
+</br>
+
+# Compile-time Errors
+
+fact.rs leans into the Rust way of doing things, and attempts to compile-time error as much as possible. This includes the following,
+- Symbols are assigned to variables at compile-time, ensuring that symbols are can not be mismatched
+- Enforcing the correct number of keys for a factor
+- Ensuring that noise model dimensions match the residual dimensions
+
+A few examples,
+```rust
+use factrs::core::{assign_symbols, fac, PriorResidual, Values, VectorVar2, SO2};
+
+// Assign symbols to variable types
+assign_symbols(X: SO2, Y: SO2);
+let mut values = Values::new();
+
+// Proper usage
+let id = SO2::identity();
+values.insert(X(0), id);
+let prior = PriorResidual::new(id);
+let f = fac![prior, X(0), (0.1, 0.2) as std];
+
+// These will all compile-time error
+// mismatched symbol-variable types
+values.insert(X(5), VectorVar2::identity());
+// wrong number of keys 
+let f = fac![PriorResidual::new(id), (X(0), X(1))]; 
+// wrong noise-model dimension
+let n = GaussianNoise::<5>::from_scalar_sigma(0.1);
+let f = fac![PriorResidual::new(id), X(0), n];
+// mismatched symbol-variable types
+let f = fac![PriorResidual::new(id), Y(0), 0.1 as std];
+```
 
 # Benchmarks
 Performance-wise, factrs is competitive with alternative libraries. Benchmarks were ran on a 12th Gen Intel i9 and are all single-threaded (for now). Current benchmarks include [gtsam](https://github.com/borglab/gtsam/) and [tinysolver-rs](https://github.com/powei-lin/tiny-solver-rs).

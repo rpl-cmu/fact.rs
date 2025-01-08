@@ -32,7 +32,8 @@ use crate::{
 /// - <blue>Robust Kernel</blue>: The robust kernel weights the error of the
 ///   factor, given by the traits in the [robust](crate::robust) module.
 ///
-/// To construct a factor, please see the [FactorBuilder] struct.
+/// The easiest way to construct a factor is using the [fac](factrs::fac) macro,
+/// or alternatively, using [FactorBuilder].
 ///
 /// During optimization the factor is linearized around a set of values into a
 /// [LinearFactor].
@@ -123,7 +124,7 @@ impl fmt::Debug for Factor {
 /// Formatter for a factor
 ///
 /// Specifically, this can be used if custom symbols are desired. See
-/// `tests/custom_key` for examples.
+/// [tests/custom_key](https://github.com/rpl-cmu/factrs/blob/dev/tests/custom_key.rs) for examples.
 pub struct FactorFormatter<'f, KF> {
     factor: &'f Factor,
     kf: PhantomData<KF>,

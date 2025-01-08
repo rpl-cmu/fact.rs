@@ -14,8 +14,8 @@ type Alias<V, T> = <V as Variable>::Alias<T>;
 /// Base trait for residuals
 ///
 /// This trait is used to implement custom residuals. It is recommended to use
-/// one of the numbered residuals traits instead, and then call the
-/// [impl_residual](crate::impl_residual) macro to implement this trait.
+/// implement one of the `ResidualN` traits, and then [mark](factrs::mark) it to
+/// implement this.
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait Residual: Debug + DynClone {
     fn dim_in(&self) -> usize;

@@ -69,6 +69,76 @@ impl<const N: usize, T: Numeric> Variable for VectorVar<N, T> {
     }
 }
 
+// Since it has an extra generic, we have to tag things by hand
+#[cfg(feature = "serde")]
+const _: () = {
+    use factrs::{
+        core::{BetweenResidual, PriorResidual},
+        residuals::Residual,
+        variables::VariableSafe,
+    };
+
+    impl<const N: usize> typetag::Tagged for VectorVar<N> {
+        fn tag() -> String {
+            format!("VectorVar<{}>", N)
+        }
+    }
+
+    factrs::serde::tag_variable! {
+        VectorVar<1>,
+        VectorVar<2>,
+        VectorVar<3>,
+        VectorVar<4>,
+        VectorVar<5>,
+        VectorVar<6>,
+        VectorVar<7>,
+        VectorVar<8>,
+        VectorVar<9>,
+        VectorVar<10>,
+        VectorVar<11>,
+        VectorVar<12>,
+        VectorVar<13>,
+        VectorVar<14>,
+        VectorVar<15>,
+        VectorVar<16>,
+    }
+
+    factrs::serde::tag_residual! {
+        PriorResidual<VectorVar<1>>,
+        PriorResidual<VectorVar<2>>,
+        PriorResidual<VectorVar<3>>,
+        PriorResidual<VectorVar<4>>,
+        PriorResidual<VectorVar<5>>,
+        PriorResidual<VectorVar<6>>,
+        PriorResidual<VectorVar<7>>,
+        PriorResidual<VectorVar<8>>,
+        PriorResidual<VectorVar<9>>,
+        PriorResidual<VectorVar<10>>,
+        PriorResidual<VectorVar<11>>,
+        PriorResidual<VectorVar<12>>,
+        PriorResidual<VectorVar<13>>,
+        PriorResidual<VectorVar<14>>,
+        PriorResidual<VectorVar<15>>,
+        PriorResidual<VectorVar<16>>,
+        BetweenResidual<VectorVar<1>>,
+        BetweenResidual<VectorVar<2>>,
+        BetweenResidual<VectorVar<3>>,
+        BetweenResidual<VectorVar<4>>,
+        BetweenResidual<VectorVar<5>>,
+        BetweenResidual<VectorVar<6>>,
+        BetweenResidual<VectorVar<7>>,
+        BetweenResidual<VectorVar<8>>,
+        BetweenResidual<VectorVar<9>>,
+        BetweenResidual<VectorVar<10>>,
+        BetweenResidual<VectorVar<11>>,
+        BetweenResidual<VectorVar<12>>,
+        BetweenResidual<VectorVar<13>>,
+        BetweenResidual<VectorVar<14>>,
+        BetweenResidual<VectorVar<15>>,
+        BetweenResidual<VectorVar<16>>,
+    }
+};
+
 macro_rules! impl_vector_new {
     ($($num:literal, [$($args:ident),*]);* $(;)?) => {$(
         impl<T: Numeric> VectorVar<$num, T> {

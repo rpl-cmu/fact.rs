@@ -1,5 +1,4 @@
-use syn::parse_macro_input;
-use syn::ItemImpl;
+use syn::{parse_macro_input, ItemImpl};
 
 mod fac;
 mod noise;

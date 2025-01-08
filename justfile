@@ -14,8 +14,11 @@ profile:
     cargo flamegraph --profile profile --example g2o -- ./examples/data/parking-garage.g2o
 
 # build docs with latex support
-docs:
-    RUSTDOCFLAGS="--html-in-header $PWD/assets/katex-header.html" cargo doc
+doc:
+    RUSTDOCFLAGS="--cfg docsrs --html-in-header $PWD/assets/katex-header.html" cargo doc --features="serde rerun" -Zunstable-options -Zrustdoc-scrape-examples
+
+bacon-doc:
+    RUSTDOCFLAGS="--cfg docsrs --html-in-header $PWD/assets/katex-header.html" bacon doc --features="serde rerun" -- -Zunstable-options -Zrustdoc-scrape-examples
 
 # ---------------------- Easton specific helpers that work on my system ---------------------- #
 # tune the system for benchmarking using pyperf

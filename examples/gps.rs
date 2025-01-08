@@ -12,7 +12,6 @@ A simple 2D pose slam example with "GPS" measurements
 #![allow(unused_imports)]
 // Our state will be represented by SE2 -> theta, x, y
 // VectorVar2 is a newtype around Vector2 for optimization purposes
-use factrs::variables::{VectorVar2, SE2};
 use factrs::{
     assign_symbols,
     core::{BetweenResidual, GaussNewton, Graph, Values},
@@ -20,6 +19,7 @@ use factrs::{
     linalg::{Const, ForwardProp, Numeric, NumericalDiff, VectorX},
     residuals::Residual1,
     traits::*,
+    variables::{VectorVar2, SE2},
 };
 
 #[derive(Clone, Debug)]
@@ -43,7 +43,8 @@ impl Residual1 for GpsResidual {
     // Use forward propagation for differentiation
     type Differ = ForwardProp<<Self as Residual1>::DimIn>;
     // Alternatively, could use numerical differentiation (6 => 10^-6 as
-    // denominator) type Differ = NumericalDiff<6>;
+    // denominator)
+    // type Differ = NumericalDiff<6>;
 
     // The input variable type, input dimension of variable(s), and output dimension
     // of residual
@@ -75,8 +76,8 @@ impl Residual1 for GpsResidual {
     //     }
     // }
     // As a note - the above jacobian is only valid if running with the "left"
-    // feature disabled Switching to the left feature will change the jacobian
-    // used
+    // feature disabled
+    // Enabling the left feature will change the jacobian
 }
 
 // Here we assign X to always represent SE2 variables
@@ -107,14 +108,17 @@ fn main() {
     values.insert(X(1), SE2::identity());
     values.insert(X(2), SE2::identity());
 
-    // These will all compile-time error
-    // values.insert(X(5), VectorVar2::identity()); // wrong variable type
-    // let f = fac![GpsResidual::new(0.0, 0.0), (X(0), X(1))]; // wrong number of
-    // keys let n = GaussianNoise::<5>::from_scalar_sigma(0.1);
-    // let f = fac![GpsResidual::new(0.0, 0.0), X(0), n]; // wrong noise-model
-    // dimension assign_symbols!(Y : VectorVar2);
-    // let f = fac![GpsResidual::new(0.0, 0.0), Y(0), 0.1 as std]; // wrong variable
-    // type
+    // // These will all compile-time error
+    // // mismatched symbol-variable types
+    // values.insert(X(5), VectorVar2::identity());
+    // // wrong number of keys
+    // let f = fac![GpsResidual::new(0.0, 0.0), (X(0), X(1))];
+    // // wrong noise-model dimension
+    // let n = factrs::noise::GaussianNoise::<5>::from_scalar_sigma(0.1);
+    // let f = fac![GpsResidual::new(0.0, 0.0), X(0), n];
+    // // mismatched symbol-variable types
+    // assign_symbols!(Y : VectorVar2);
+    // let f = fac![GpsResidual::new(0.0, 0.0), Y(0), 0.1 as std];
 
     // optimize
     let mut opt: GaussNewton = GaussNewton::new(graph);
