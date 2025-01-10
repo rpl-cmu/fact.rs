@@ -159,16 +159,24 @@ impl<T: Numeric> Variable for SO3<T> {
     }
 
     fn log(&self) -> VectorX<T> {
-        let xi = vectorx![self.xyzw.x, self.xyzw.y, self.xyzw.z];
-        // Abs value in case we had a negative quaternion
-        let w = self.xyzw.w.abs();
-
-        let norm_v = xi.norm();
-        if norm_v < T::from(1e-3) {
-            xi * T::from(2.0)
+        // Flip quaternion sign if w is negative
+        let sign = if self.xyzw.w.is_sign_positive() {
+            T::from(1.0)
         } else {
-            xi * norm_v.atan2(w) * T::from(2.0) / norm_v
-        }
+            T::from(-1.0)
+        };
+        let xi = vectorx![self.xyzw.x, self.xyzw.y, self.xyzw.z] * sign;
+        let w = self.xyzw.w * sign;
+
+        let norm_v2 = xi.norm_squared();
+        let scale = if norm_v2 < T::from(1e-6) {
+            T::from(2.0) / w - T::from(2.0 / 3.0) * norm_v2 / (w * w * w)
+        } else {
+            let norm_v = norm_v2.sqrt();
+            norm_v.atan2(w) * T::from(2.0) / norm_v
+        };
+
+        xi * scale
     }
 
     fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
