@@ -1,6 +1,6 @@
 [package]
 name = "factrs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "Factor graph optimization for robotics"
@@ -32,8 +32,9 @@ foldhash = "0.1.4"
 paste = "1.0.15"
 downcast-rs = "2.0.1"
 log = "0.4.22"
-factrs-proc = { version = "0.1.0", path = "./factrs-proc" }
 pad-adapter = "0.1.1"
+dyn-clone = "1.0.17"
+factrs-proc = { version = "0.2.0", path = "./factrs-proc" }
 
 # numerical 
 faer = { version = "0.20.2", default-features = false, features = [
@@ -43,19 +44,18 @@ faer = { version = "0.20.2", default-features = false, features = [
 ] }
 faer-ext = { version = "0.4.1", features = ["nalgebra"] }
 nalgebra = { version = "0.33.2", features = ["compare"] }
+simba = { version = "0.9.0", default-features = false }
 num-dual = "0.11.0"
 matrixcompare = { version = "0.3.0" }
 
 # serialization
 serde = { version = "1.0.217", optional = true }
-typetag = { version = "0.2.18", optional = true, path = "./factrs-typetag" }
+factrs-typetag = { version = "0.2.0", optional = true, path = "./factrs-typetag" }
 
 # rerun support
 rerun = { version = "0.21.0", optional = true, default-features = false, features = [
     "sdk",
 ] }
-simba = { version = "0.9.0", default-features = false }
-dyn-clone = "1.0.17"
 
 
 [features]
@@ -74,7 +74,7 @@ rayon = ["faer/rayon"]
 # Add support for serialization
 serde = [
     "dep:serde",
-    "dep:typetag",
+    "dep:factrs-typetag",
     "factrs-proc/serde",
     "nalgebra/serde-serialize",
 ]

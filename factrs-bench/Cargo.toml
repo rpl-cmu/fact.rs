@@ -1,11 +1,11 @@
 [package]
 name = "factrs-bench"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
 nalgebra = { version = "0.33", features = ["compare"] }
-factrs = { version = "0.1.0", path = ".." }
+factrs = { version = "0.2.0", path = ".." }
 tiny-solver = { git = "https://github.com/contagon/tiny-solver-rs", branch = "rayon" }
 
 [dev-dependencies]

@@ -58,7 +58,7 @@ pub struct DefaultSymbolHandler;
 
 impl DefaultSymbolHandler {
     pub fn sym_to_key(chr: char, idx: u32) -> Key {
-        Key((chr as u64) << IDX_SIZE | idx as u64 & IDX_MASK)
+        Key(((chr as u64) << IDX_SIZE) | (idx as u64 & IDX_MASK))
     }
 
     pub fn key_to_sym(k: Key) -> (char, u32) {

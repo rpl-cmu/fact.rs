@@ -32,8 +32,8 @@ impl DoubleCharHandler {
         debug_assert!(chr1.is_ascii());
         debug_assert!(chr2.is_ascii());
 
-        Key((chr1 as u64) << IDX_SIZE << CHR_SIZE
-            | (chr2 as u64) << IDX_SIZE
+        Key(((chr1 as u64) << IDX_SIZE << CHR_SIZE)
+            | ((chr2 as u64) << IDX_SIZE)
             | (idx as u64) & IDX_MASK)
     }
 
