@@ -159,21 +159,19 @@ impl<T: Numeric> Variable for SO3<T> {
     }
 
     fn log(&self) -> VectorX<T> {
-        // Flip quaternion sign if w is negative
-        let sign = if self.xyzw.w.is_sign_positive() {
-            T::from(1.0)
-        } else {
-            T::from(-1.0)
-        };
-        let xi = vectorx![self.xyzw.x, self.xyzw.y, self.xyzw.z] * sign;
-        let w = self.xyzw.w * sign;
+        let xi = vectorx![self.xyzw.x, self.xyzw.y, self.xyzw.z];
+        let w = self.xyzw.w;
 
         let norm_v2 = xi.norm_squared();
         let scale = if norm_v2 < T::from(1e-6) {
+            // Here we don't have to worry about the sign as it'll cancel out
             T::from(2.0) / w - T::from(2.0 / 3.0) * norm_v2 / (w * w * w)
         } else {
+            // flip both xi and w sign here (to reduce multiplications)
+            #[rustfmt::skip]
+            let sign = if w.is_sign_positive() { T::one() } else { T::from(-1.0) };
             let norm_v = norm_v2.sqrt();
-            norm_v.atan2(w) * T::from(2.0) / norm_v
+            sign * norm_v.atan2(sign * w) * T::from(2.0) / norm_v
         };
 
         xi * scale
