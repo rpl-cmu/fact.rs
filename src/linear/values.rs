@@ -126,9 +126,9 @@ mod test {
         let linear_values = LinearValues::from_order_and_vector(order, vector);
         assert!(linear_values.len() == 3);
         assert!(linear_values.dim() == 11);
-        assert!(linear_values.get(X(0)).unwrap().len() == 2);
-        assert!(linear_values.get(X(1)).unwrap().len() == 6);
-        assert!(linear_values.get(X(2)).unwrap().len() == 3);
+        assert!(linear_values.get(X(0)).expect("Key was missing").len() == 2);
+        assert!(linear_values.get(X(1)).expect("Key was missing").len() == 6);
+        assert!(linear_values.get(X(2)).expect("Key was missing").len() == 3);
         assert!(linear_values.get(X(3)).is_none());
     }
 

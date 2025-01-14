@@ -1,9 +1,11 @@
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
+
+use dyn_clone::DynClone;
 
 use crate::{
     containers::{Key, Values},
     linalg::{Diff, DiffResult, DimName, MatrixX, Numeric, VectorX},
-    variables::{Variable, VariableUmbrella},
+    variables::{Variable, VariableDtype},
 };
 
 type Alias<V, T> = <V as Variable>::Alias<T>;
@@ -12,32 +14,10 @@ type Alias<V, T> = <V as Variable>::Alias<T>;
 /// Base trait for residuals
 ///
 /// This trait is used to implement custom residuals. It is recommended to use
-/// one of the numbered residuals traits instead, and then call the
-/// [impl_residual](crate::impl_residual) macro to implement this trait.
-pub trait Residual: Debug + Display {
-    type DimIn: DimName;
-    type DimOut: DimName;
-    type NumVars: DimName;
-
-    fn dim_in(&self) -> usize {
-        Self::DimIn::USIZE
-    }
-
-    fn dim_out(&self) -> usize {
-        Self::DimOut::USIZE
-    }
-
-    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX;
-
-    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>;
-}
-
-/// The object safe version of [Residual].
-///
-/// This trait is used to allow for dynamic dispatch of residuals.
-/// Implemented for all types that implement [Residual].
+/// implement one of the `ResidualN` traits, and then [mark](factrs::mark) it to
+/// implement this.
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
-pub trait ResidualSafe: Debug + Display {
+pub trait Residual: Debug + DynClone {
     fn dim_in(&self) -> usize;
 
     fn dim_out(&self) -> usize;
@@ -47,41 +27,12 @@ pub trait ResidualSafe: Debug + Display {
     fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>;
 }
 
-impl<
-        #[cfg(not(feature = "serde"))] R: Residual,
-        #[cfg(feature = "serde")] R: Residual + crate::serde::Tagged,
-    > ResidualSafe for R
-{
-    fn dim_in(&self) -> usize {
-        Residual::dim_in(self)
-    }
-
-    fn dim_out(&self) -> usize {
-        Residual::dim_out(self)
-    }
-
-    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX {
-        Residual::residual(self, values, keys)
-    }
-
-    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
-        Residual::residual_jacobian(self, values, keys)
-    }
-
-    #[doc(hidden)]
-    #[cfg(feature = "serde")]
-    fn typetag_name(&self) -> &'static str {
-        Self::TAG
-    }
-
-    #[doc(hidden)]
-    #[cfg(feature = "serde")]
-    fn typetag_deserialize(&self) {}
-}
+dyn_clone::clone_trait_object!(Residual);
 
 // -------------- Use Macro to create residuals with set sizes -------------- //
 use paste::paste;
-
+#[cfg(feature = "serde")]
+pub use register_residual as tag_residual;
 macro_rules! residual_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {
@@ -90,7 +41,7 @@ macro_rules! residual_maker {
             {
                 $(
                     #[doc=concat!("Type of variable ", $idx)]
-                    type $var: VariableUmbrella;
+                    type $var: VariableDtype;
                 )*
                 /// The total input dimension
                 type DimIn: DimName;

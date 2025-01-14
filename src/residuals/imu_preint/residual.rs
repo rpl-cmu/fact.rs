@@ -1,23 +1,17 @@
-use std::fmt;
-
-use nalgebra::Const;
-
 use super::{delta::ImuDelta, Accel, Gravity, Gyro, ImuState};
 use crate::{
     containers::{Factor, FactorBuilder, Symbol, TypedSymbol},
-    dtype, impl_residual,
-    linalg::{ForwardProp, Matrix, Matrix3, VectorX},
+    dtype,
+    linalg::{Const, ForwardProp, Matrix, Matrix3, VectorX},
     noise::GaussianNoise,
     residuals::Residual6,
-    tag_residual,
-    traits::*,
-    variables::{ImuBias, MatrixLieGroup, VectorVar3, SE3, SO3},
+    variables::{ImuBias, MatrixLieGroup, Variable, VectorVar3, SE3, SO3},
 };
 // ------------------------- Covariances ------------------------- //
 
 /// Covariance parameters for the IMU preintegration
 ///
-/// Trys to come with semi-resonable defaults for the covariance parameters
+/// Tries to come with semi-reasonable defaults for the covariance parameters
 /// ```
 /// use factrs::residuals::ImuCovariance;
 /// let cov = ImuCovariance::default();
@@ -287,14 +281,13 @@ impl ImuPreintegrator {
 
 // ------------------------- The Residual ------------------------- //
 
-tag_residual!(ImuPreintegrationResidual);
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ImuPreintegrationResidual {
     delta: ImuDelta,
 }
 
+#[factrs::mark]
 impl Residual6 for ImuPreintegrationResidual {
     type Differ = ForwardProp<Const<30>>;
     type DimIn = Const<30>;
@@ -316,7 +309,7 @@ impl Residual6 for ImuPreintegrationResidual {
         b2: ImuBias<T>,
     ) -> VectorX<T> {
         // Add dual types to all of our fields
-        let delta = ImuDelta::<T>::dual_convert(&self.delta);
+        let delta = &self.delta.cast();
 
         // Pull out the measurements
         let start = ImuState {
@@ -354,26 +347,18 @@ impl Residual6 for ImuPreintegrationResidual {
     }
 }
 
-impl_residual!(6, ImuPreintegrationResidual);
-
-impl fmt::Display for ImuPreintegrationResidual {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ImuPreintegrationResidual({})", self.delta)
-    }
-}
-
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::{
         assert_variable_eq, assign_symbols,
         containers::{Graph, Values},
+        fac,
         linalg::Vector3,
-        optimizers::GaussNewton,
+        optimizers::{GaussNewton, Optimizer},
         residuals::{Accel, Gyro, PriorResidual},
         variables::{ImuBias, VectorVar3, SE3},
     };
-
-    use super::*;
 
     assign_symbols!(X: SE3; V: VectorVar3; B: ImuBias);
 
@@ -399,9 +384,9 @@ mod test {
         // Build factor and graph
         let mut graph = Graph::new();
         let factor = preint.build(X(0), V(0), B(0), X(1), V(1), B(1));
-        let prior_x0 = FactorBuilder::new1(PriorResidual::new(x0.clone()), X(0)).build();
-        let prior_v0 = FactorBuilder::new1(PriorResidual::new(v0.clone()), V(0)).build();
-        let prior_b0 = FactorBuilder::new1(PriorResidual::new(b0.clone()), B(0)).build();
+        let prior_x0 = fac!(PriorResidual::new(x0.clone()), X(0), 1e-3 as cov);
+        let prior_v0 = fac!(PriorResidual::new(v0.clone()), V(0), 1e-3 as cov);
+        let prior_b0 = fac!(PriorResidual::new(b0.clone()), B(0), 1e-3 as cov);
         graph.add_factor(factor);
         graph.add_factor(prior_x0);
         graph.add_factor(prior_v0);

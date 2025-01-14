@@ -1,6 +1,16 @@
-use faer::sparse::SymbolicSparseColMat;
+use std::{
+    fmt::{Debug, Write},
+    marker::PhantomData,
+};
 
-use super::{Idx, Values, ValuesOrder};
+use faer::sparse::SymbolicSparseColMat;
+use pad_adapter::PadAdapter;
+
+use super::{DefaultSymbolHandler, Idx, KeyFormatter, Values, ValuesOrder};
+// Once "debug_closure_helpers" is stabilized, we won't need this anymore
+// Need custom debug to handle pretty key printing at the moment
+// Pad adapter helps with the pretty printing
+use crate::containers::factor::FactorFormatter;
 use crate::{containers::Factor, dtype, linear::LinearGraph};
 
 /// Structure to represent a nonlinear factor graph
@@ -27,7 +37,7 @@ use crate::{containers::Factor, dtype, linear::LinearGraph};
 /// let mut graph = Graph::new();
 /// graph.add_factor(factor);
 /// ```
-#[derive(Default, Debug)]
+#[derive(Default, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Graph {
     factors: Vec<Factor>,
@@ -77,7 +87,7 @@ impl Graph {
                     let Idx {
                         idx: col,
                         dim: col_dim,
-                    } = order.get(*key).unwrap();
+                    } = order.get(*key).expect("Key missing in values");
                     (0..*col_dim).for_each(|j| {
                         indices.push((row + i, col + j));
                     });
@@ -88,11 +98,54 @@ impl Graph {
 
         let (sparsity_pattern, sparsity_order) =
             SymbolicSparseColMat::try_new_from_indices(total_rows, total_columns, &indices)
-                .unwrap();
+                .expect("Failed to make sparse matrix");
         GraphOrder {
             order,
             sparsity_pattern,
             sparsity_order,
+        }
+    }
+}
+
+impl Debug for Graph {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        GraphFormatter::<DefaultSymbolHandler>::new(self).fmt(f)
+    }
+}
+
+/// Formatter for a graph
+///
+/// Specifically, this can be used if custom symbols are desired. See
+/// [tests/custom_key](https://github.com/rpl-cmu/factrs/blob/dev/tests/custom_key.rs) for examples.
+pub struct GraphFormatter<'g, KF> {
+    graph: &'g Graph,
+    kf: PhantomData<KF>,
+}
+
+impl<'g, KF> GraphFormatter<'g, KF> {
+    pub fn new(graph: &'g Graph) -> Self {
+        Self {
+            graph,
+            kf: Default::default(),
+        }
+    }
+}
+
+impl<KF: KeyFormatter> Debug for GraphFormatter<'_, KF> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            f.write_str("Graph [\n")?;
+            let mut pad = PadAdapter::new(f);
+            for factor in self.graph.factors.iter() {
+                writeln!(pad, "{:#?},", FactorFormatter::<KF>::new(factor))?;
+            }
+            f.write_str("]")
+        } else {
+            f.write_str("Graph [ ")?;
+            for factor in self.graph.factors.iter() {
+                write!(f, "{:?}, ", FactorFormatter::<KF>::new(factor))?;
+            }
+            f.write_str("]")
         }
     }
 }

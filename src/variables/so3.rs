@@ -1,23 +1,19 @@
 use std::{fmt, ops};
 
-use super::VectorVar4;
 use crate::{
     dtype,
     linalg::{
         vectorx, AllocatorBuffer, Const, DefaultAllocator, Derivative, DimName, DualAllocator,
-        DualVector, Matrix3, MatrixView, Numeric, Vector3, Vector4, VectorDim, VectorView3,
-        VectorViewX, VectorX,
+        DualVector, Matrix3, MatrixView, Numeric, SupersetOf, Vector3, Vector4, VectorDim,
+        VectorView3, VectorViewX, VectorX,
     },
-    tag_variable,
     variables::{MatrixLieGroup, Variable},
 };
-
-tag_variable!(SO3);
 
 /// 3D Special Orthogonal Group
 ///
 /// Implementation of SO(3) for 3D rotations. Specifically, we use quaternions
-/// to represent rotations due to their underyling efficiency when computing
+/// to represent rotations due to their underlying efficiency when computing
 /// log/exp maps.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -55,6 +51,14 @@ impl<T: Numeric> SO3<T> {
     }
 
     pub fn dexp(xi: VectorView3<T>) -> Matrix3<T> {
+        if cfg!(feature = "left") {
+            Self::dexp_left(xi)
+        } else {
+            Self::dexp_right(xi)
+        }
+    }
+
+    pub fn dexp_right(xi: VectorView3<T>) -> Matrix3<T> {
         let theta2 = xi.norm_squared();
 
         let (a, b) = if theta2 < T::from(1e-6) {
@@ -67,14 +71,32 @@ impl<T: Numeric> SO3<T> {
         };
 
         let hat = SO3::hat(xi);
-        // gtsam says minus here for -hat a, but ethan eade says plus
-        // Empirically (via our test & jac in ImuDelta), minus is correct
-        // Need to find reference to confirm
+        // Right has a minus
         Matrix3::identity() - hat * a + hat * hat * b
+    }
+
+    pub fn dexp_left(xi: VectorView3<T>) -> Matrix3<T> {
+        let theta2 = xi.norm_squared();
+
+        let (a, b) = if theta2 < T::from(1e-6) {
+            // TODO: Higher order terms using theta2?
+            (T::from(0.5), T::from(1.0) / T::from(6.0))
+        } else {
+            let theta = theta2.sqrt();
+            let a = (T::from(1.0) - theta.cos()) / theta2;
+            let b = (theta - theta.sin()) / (theta * theta2);
+            (a, b)
+        };
+
+        let hat = SO3::hat(xi);
+        // Left has a plus
+        Matrix3::identity() + hat * a + hat * hat * b
     }
 }
 
-impl<T: Numeric> Variable<T> for SO3<T> {
+#[factrs::mark]
+impl<T: Numeric> Variable for SO3<T> {
+    type T = T;
     type Dim = Const<3>;
     type Alias<TT: Numeric> = SO3<TT>;
 
@@ -138,24 +160,30 @@ impl<T: Numeric> Variable<T> for SO3<T> {
 
     fn log(&self) -> VectorX<T> {
         let xi = vectorx![self.xyzw.x, self.xyzw.y, self.xyzw.z];
-        // Abs value in case we had a negative quaternion
-        let w = self.xyzw.w.abs();
+        let w = self.xyzw.w;
 
-        let norm_v = xi.norm();
-        if norm_v < T::from(1e-3) {
-            xi * T::from(2.0)
+        let norm_v2 = xi.norm_squared();
+        let scale = if norm_v2 < T::from(1e-6) {
+            // Here we don't have to worry about the sign as it'll cancel out
+            T::from(2.0) / w - T::from(2.0 / 3.0) * norm_v2 / (w * w * w)
         } else {
-            xi * norm_v.atan2(w) * T::from(2.0) / norm_v
-        }
+            // flip both xi and w sign here (to reduce multiplications)
+            #[rustfmt::skip]
+            let sign = if w.is_sign_positive() { T::one() } else { T::from(-1.0) };
+            let norm_v = norm_v2.sqrt();
+            sign * norm_v.atan2(sign * w) * T::from(2.0) / norm_v
+        };
+
+        xi * scale
     }
 
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
         SO3 {
-            xyzw: VectorVar4::<dtype>::dual_convert(&other.xyzw.into()).into(),
+            xyzw: self.xyzw.cast(),
         }
     }
 
-    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    fn dual_exp<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
@@ -182,7 +210,7 @@ impl<T: Numeric> Variable<T> for SO3<T> {
     }
 }
 
-impl<T: Numeric> MatrixLieGroup<T> for SO3<T> {
+impl<T: Numeric> MatrixLieGroup for SO3<T> {
     type TangentDim = Const<3>;
     type MatrixDim = Const<3>;
     type VectorDim = Const<3>;
@@ -298,6 +326,7 @@ impl<T: Numeric> MatrixLieGroup<T> for SO3<T> {
 impl<T: Numeric> ops::Mul for SO3<T> {
     type Output = SO3<T>;
 
+    #[inline]
     fn mul(self, other: Self) -> Self::Output {
         self.compose(&other)
     }
@@ -306,6 +335,7 @@ impl<T: Numeric> ops::Mul for SO3<T> {
 impl<T: Numeric> ops::Mul for &SO3<T> {
     type Output = SO3<T>;
 
+    #[inline]
     fn mul(self, other: Self) -> Self::Output {
         self.compose(other)
     }
@@ -313,17 +343,31 @@ impl<T: Numeric> ops::Mul for &SO3<T> {
 
 impl<T: Numeric> fmt::Display for SO3<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let precision = f.precision().unwrap_or(3);
+        let log = self.log();
         write!(
             f,
-            "SO3({:.3}, {:.3}, {:.3}, {:.3})",
-            self.xyzw[0], self.xyzw[1], self.xyzw[2], self.xyzw[3]
+            "SO3({:.p$}, {:.p$}, {:.p$})",
+            log[0],
+            log[1],
+            log[2],
+            p = precision
         )
     }
 }
 
 impl<T: Numeric> fmt::Debug for SO3<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+        let precision = f.precision().unwrap_or(3);
+        write!(
+            f,
+            "SO3 {{ x: {:.p$}, y: {:.p$}, z: {:.p$}, w: {:.p$} }}",
+            self.xyzw[0],
+            self.xyzw[1],
+            self.xyzw[2],
+            self.xyzw[3],
+            p = precision
+        )
     }
 }
 
@@ -338,12 +382,22 @@ mod tests {
 
     test_lie!(SO3);
 
+    #[cfg(not(feature = "f32"))]
+    const PWR: i32 = 6;
+    #[cfg(not(feature = "f32"))]
+    const TOL: f64 = 1e-6;
+
+    #[cfg(feature = "f32")]
+    const PWR: i32 = 3;
+    #[cfg(feature = "f32")]
+    const TOL: f32 = 1e-3;
+
     #[test]
     fn dexp() {
         let xi = Vector3::new(0.1, 0.2, 0.3);
         let got = SO3::dexp(xi.as_view());
 
-        let exp = NumericalDiff::<6>::jacobian_variable_1(
+        let exp = NumericalDiff::<PWR>::jacobian_variable_1(
             |x: VectorVar3| SO3::exp(Vector3::from(x).as_view()),
             &VectorVar3::from(xi),
         )
@@ -351,6 +405,6 @@ mod tests {
 
         println!("got: {}", got);
         println!("exp: {}", exp);
-        assert_matrix_eq!(got, exp, comp = abs, tol = 1e-6);
+        assert_matrix_eq!(got, exp, comp = abs, tol = TOL);
     }
 }

@@ -1,7 +1,10 @@
 /target
+/build
 .vscode
 *.g2o
 *.svg
 *.png
 *.sh
 perf*
+
+factrs-proc/target

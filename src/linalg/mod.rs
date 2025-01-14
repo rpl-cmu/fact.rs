@@ -11,7 +11,7 @@
 use crate::dtype;
 
 mod dual;
-pub use dual::{DualAllocator, DualConvert, DualScalar, DualVector, Numeric};
+pub use dual::{DualAllocator, DualScalar, DualVector, Numeric};
 // Dual numbers
 pub use num_dual::Derivative;
 
@@ -62,9 +62,10 @@ impl MatrixBlock {
 // ------------------------- Derivatives ------------------------- //
 use paste::paste;
 
-use crate::variables::Variable;
+use crate::variables::VariableDtype;
 
 /// A struct to hold the result of a differentiation operation
+#[derive(Debug, Clone)]
 pub struct DiffResult<V, G> {
     pub value: V,
     pub diff: G,
@@ -73,7 +74,7 @@ pub struct DiffResult<V, G> {
 macro_rules! fn_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<gradient_ $num>]<$( $var: Variable<Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::T>,)*) -> Self::T>
+            fn [<gradient_ $num>]<$( $var: VariableDtype, )* F: Fn($($var::Alias<Self::T>,)*) -> Self::T>
                     (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>{
                     let f_wrapped = |$($name: $var::Alias<Self::T>,)*| vectorx![f($($name.clone(),)*)];
                     let DiffResult { value, diff } = Self::[<jacobian_ $num>](f_wrapped, $($name,)*);
@@ -85,7 +86,7 @@ macro_rules! fn_maker {
 
     (jac, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<jacobian_ $num>]<$( $var: Variable<Alias<$crate::dtype>=$var>, )* F: Fn($($var::Alias<Self::T>,)*) -> VectorX<Self::T>>
+            fn [<jacobian_ $num>]<$( $var: VariableDtype, )* F: Fn($($var::Alias<Self::T>,)*) -> VectorX<Self::T>>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>;
         }
     };

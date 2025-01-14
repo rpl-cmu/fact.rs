@@ -3,8 +3,7 @@ use std::ops::Mul;
 use faer::{
     prelude::SpSolver,
     sparse::{linalg::solvers, SparseColMatRef},
-    Mat,
-    MatRef,
+    Mat, MatRef,
 };
 
 use crate::dtype;
@@ -40,21 +39,29 @@ impl LinearSolver for CholeskySolver {
         b: MatRef<dtype>,
     ) -> Mat<dtype> {
         if self.sparsity_pattern.is_none() {
-            self.sparsity_pattern =
-                Some(solvers::SymbolicCholesky::try_new(a.symbolic(), faer::Side::Lower).unwrap());
+            self.sparsity_pattern = Some(
+                solvers::SymbolicCholesky::try_new(a.symbolic(), faer::Side::Lower)
+                    .expect("Symbolic cholesky failed"),
+            );
         }
 
         solvers::Cholesky::try_new_with_symbolic(
-            self.sparsity_pattern.clone().unwrap(),
+            self.sparsity_pattern
+                .clone()
+                .expect("Missing symbol cholesky"),
             a,
             faer::Side::Lower,
         )
-        .unwrap()
+        .expect("Cholesky decomp failed")
         .solve(&b)
     }
 
     fn solve_lst_sq(&mut self, a: SparseColMatRef<usize, dtype>, b: MatRef<dtype>) -> Mat<dtype> {
-        let ata = a.transpose().to_col_major().unwrap().mul(a);
+        let ata = a
+            .transpose()
+            .to_col_major()
+            .expect("Failed to transpose A matrix")
+            .mul(a);
 
         let atb = a.transpose().mul(b);
 
@@ -81,16 +88,20 @@ impl LinearSolver for QRSolver {
 
     fn solve_lst_sq(&mut self, a: SparseColMatRef<usize, dtype>, b: MatRef<dtype>) -> Mat<dtype> {
         if self.sparsity_pattern.is_none() {
-            self.sparsity_pattern = Some(solvers::SymbolicQr::try_new(a.symbolic()).unwrap());
+            self.sparsity_pattern =
+                Some(solvers::SymbolicQr::try_new(a.symbolic()).expect("Symbolic QR failed"));
         }
 
         // TODO: I think we're doing an extra copy here from solution -> slice solution
-        solvers::Qr::try_new_with_symbolic(self.sparsity_pattern.clone().unwrap(), a)
-            .unwrap()
-            .solve(&b)
-            .as_ref()
-            .subrows(0, a.ncols())
-            .to_owned()
+        solvers::Qr::try_new_with_symbolic(
+            self.sparsity_pattern.clone().expect("Missing symbolic QR"),
+            a,
+        )
+        .expect("QR failed")
+        .solve(&b)
+        .as_ref()
+        .subrows(0, a.ncols())
+        .to_owned()
     }
 }
 
@@ -109,16 +120,24 @@ impl LinearSolver for LUSolver {
         b: MatRef<dtype>,
     ) -> Mat<dtype> {
         if self.sparsity_pattern.is_none() {
-            self.sparsity_pattern = Some(solvers::SymbolicLu::try_new(a.symbolic()).unwrap());
+            self.sparsity_pattern =
+                Some(solvers::SymbolicLu::try_new(a.symbolic()).expect("Symbolic LU failed"));
         }
 
-        solvers::Lu::try_new_with_symbolic(self.sparsity_pattern.clone().unwrap(), a.as_ref())
-            .unwrap()
-            .solve(&b)
+        solvers::Lu::try_new_with_symbolic(
+            self.sparsity_pattern.clone().expect("Symbolic LU missing"),
+            a.as_ref(),
+        )
+        .expect("LU decomp failed")
+        .solve(&b)
     }
 
     fn solve_lst_sq(&mut self, a: SparseColMatRef<usize, dtype>, b: MatRef<dtype>) -> Mat<dtype> {
-        let ata = a.transpose().to_col_major().unwrap().mul(a);
+        let ata = a
+            .transpose()
+            .to_col_major()
+            .expect("Failed to transpose A matrix")
+            .mul(a);
         let atb = a.transpose().mul(b);
 
         self.solve_symmetric(ata.as_ref(), atb.as_ref())
@@ -145,7 +164,7 @@ mod test {
                 (2, 1, -45.0),
             ],
         )
-        .unwrap();
+        .expect("Failed to make symbolic matrix");
         let b = mat![[15.0], [-3.0], [33.0]];
 
         let x_exp = mat![[1.874901], [-0.566112]];

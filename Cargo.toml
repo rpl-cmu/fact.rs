@@ -1,6 +1,6 @@
 [package]
 name = "factrs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "Factor graph optimization for robotics"
@@ -9,38 +9,54 @@ authors = ["Easton Potokar", "Taylor Pool"]
 repository = "https://github.com/rpl-cmu/factrs"
 keywords = ["nonlinear", "optimization", "robotics", "estimation", "SLAM"]
 categories = ["science::robotics", "mathematics"]
-rust-version = "1.81"
+rust-version = "1.83"
+exclude = ["examples/data/*"]
+
+[workspace]
+members = ["factrs-bench", "factrs-proc"]
+exclude = ["factrs-typetag"]
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header", "assets/katex-header.html"]
+features = ["serde", "rerun"]
+rustdoc-args = [
+    "--cfg",
+    "docsrs",
+    "--html-in-header",
+    "assets/katex-header.html",
+]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
 
 [dependencies]
-# base
-ahash = "0.8.11"
+foldhash = "0.1.4"
 paste = "1.0.15"
-downcast-rs = "1.2.1"
+downcast-rs = "2.0.1"
 log = "0.4.22"
+pad-adapter = "0.1.1"
+dyn-clone = "1.0.17"
+factrs-proc = { version = "0.2.0", path = "./factrs-proc" }
 
 # numerical 
-faer = { version = "0.19.4", default-features = false, features = [
+faer = { version = "0.20.2", default-features = false, features = [
     "perf-warn",
     "std",
-    "matrixcompare",
+    "linalg",
 ] }
-faer-ext = { version = "0.3.0", features = ["nalgebra"] }
+faer-ext = { version = "0.4.1", features = ["nalgebra"] }
 nalgebra = { version = "0.33.2", features = ["compare"] }
-num-dual = "0.10.0"
-matrixcompare = { version = "0.3" }
+simba = { version = "0.9.0", default-features = false }
+num-dual = "0.11.0"
+matrixcompare = { version = "0.3.0" }
 
 # serialization
-serde = { version = "1.0.214", optional = true }
-typetag = { version = "0.2.18", optional = true }
-serde_json = { version = "1.0.132", optional = true }
+serde = { version = "1.0.217", optional = true }
+factrs-typetag = { version = "0.2.0", optional = true, path = "./factrs-typetag" }
 
 # rerun support
-rerun = { version = "0.19", optional = true, default-features = false, features = [
+rerun = { version = "0.21.0", optional = true, default-features = false, features = [
     "sdk",
 ] }
+
 
 [features]
 # Run everything with f32 instead of the default f64
@@ -58,29 +74,31 @@ rayon = ["faer/rayon"]
 # Add support for serialization
 serde = [
     "dep:serde",
-    "dep:typetag",
+    "dep:factrs-typetag",
+    "factrs-proc/serde",
     "nalgebra/serde-serialize",
-    "faer/serde",
-    "ahash/serde",
 ]
-# just used for examples
-serde_json = ["dep:serde_json"]
 
 # Support for conversion to rerun variable types
 rerun = ["dep:rerun"]
 
 [dev-dependencies]
 matrixcompare = "0.3.0"
-pretty_env_logger = "0.5"
+pretty_env_logger = "0.5.0"
 nalgebra = { version = "0.33.2", features = ["compare"] }
+serde_json = { version = "1.0.135" }
 
-[[example]]
-name = "g2o"
+[profile.bench]
+lto = true
 
-[[example]]
-name = "g2o-rerun"
-required-features = ["rerun"]
+[profile.profile]
+inherits = "bench"
+debug = true
+
+[profile.dev.package.faer]
+opt-level = 3
 
 [[example]]
 name = "serde"
-required-features = ["serde", "serde_json"]
+required-features = ["serde"]
+doc-scrape-examples = true

@@ -1,0 +1,3 @@
+[submodule "factrs-typetag"]
+	path = factrs-typetag
+	url = git@github.com:contagon/factrs-typetag.git

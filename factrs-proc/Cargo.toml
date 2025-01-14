@@ -1,0 +1,24 @@
+[package]
+name = "factrs-proc"
+version = "0.2.0"
+edition = "2021"
+license = "MIT"
+description = "Proc-macros for factrs"
+authors = ["Easton Potokar", "Taylor Pool"]
+repository = "https://github.com/rpl-cmu/factrs"
+keywords = ["nonlinear", "optimization", "robotics", "estimation", "SLAM"]
+categories = ["science::robotics", "mathematics"]
+rust-version = "1.83"
+
+[lib]
+name = "factrs_proc"
+path = "src/lib.rs"
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.93"
+quote = "1.0.38"
+syn = { version = "2.0.96", features = ["full"] }
+
+[features]
+serde = []

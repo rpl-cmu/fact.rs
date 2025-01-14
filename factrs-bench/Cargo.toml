@@ -1,0 +1,20 @@
+[package]
+name = "factrs-bench"
+version = "0.2.0"
+edition = "2021"
+
+[dependencies]
+nalgebra = { version = "0.33", features = ["compare"] }
+factrs = { version = "0.2.0", path = ".." }
+tiny-solver = { git = "https://github.com/contagon/tiny-solver-rs", branch = "rayon" }
+
+[dev-dependencies]
+diol = { version = "0.8.3", default-features = false }
+
+[[bench]]
+name = "g2o-2d"
+harness = false
+
+[[bench]]
+name = "g2o-3d"
+harness = false

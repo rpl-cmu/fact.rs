@@ -1,16 +1,11 @@
 use std::{fmt, ops};
 
-use nalgebra::Const;
-
 use super::Variable;
 use crate::{
     dtype,
-    linalg::{DualVector, Numeric, Vector3, VectorDim},
+    linalg::{Const, DualVector, Numeric, SupersetOf, Vector3, VectorDim},
     residuals::{Accel, Gyro},
-    tag_variable,
 };
-
-tag_variable!(ImuBias);
 
 // TODO: Use newtypes internally as well?
 /// IMU bias
@@ -52,7 +47,9 @@ impl<T: Numeric> ImuBias<T> {
     }
 }
 
-impl<T: Numeric> Variable<T> for ImuBias<T> {
+#[factrs::mark]
+impl<T: Numeric> Variable for ImuBias<T> {
+    type T = T;
     type Dim = crate::linalg::Const<6>;
     type Alias<TT: Numeric> = ImuBias<TT>;
 
@@ -94,14 +91,14 @@ impl<T: Numeric> Variable<T> for ImuBias<T> {
         ]
     }
 
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
         ImuBias {
-            gyro: other.gyro.map(|x| x.into()),
-            accel: other.accel.map(|x| x.into()),
+            gyro: self.gyro.cast(),
+            accel: self.accel.cast(),
         }
     }
 
-    fn dual_setup<N: nalgebra::DimName>(idx: usize) -> Self::Alias<crate::linalg::DualVector<N>>
+    fn dual_exp<N: nalgebra::DimName>(idx: usize) -> Self::Alias<crate::linalg::DualVector<N>>
     where
         crate::linalg::AllocatorBuffer<N>: Sync + Send,
         nalgebra::DefaultAllocator: crate::linalg::DualAllocator<N>,
@@ -125,10 +122,17 @@ impl<T: Numeric> Variable<T> for ImuBias<T> {
 
 impl<T: Numeric> fmt::Display for ImuBias<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let precision = f.precision().unwrap_or(3);
         write!(
             f,
-            "ImuBias(g: ({:.3}, {:.3}, {:.3}), a: ({:.3}, {:.3}, {:.3}))",
-            self.gyro.x, self.gyro.y, self.gyro.z, self.accel.x, self.accel.y, self.accel.z
+            "ImuBias(g: ({:.p$}, {:.p$}, {:.p$}), a: ({:.p$}, {:.p$}, {:.p$}))",
+            self.gyro.x,
+            self.gyro.y,
+            self.gyro.z,
+            self.accel.x,
+            self.accel.y,
+            self.accel.z,
+            p = precision
         )
     }
 }
@@ -150,7 +154,7 @@ impl<T: Numeric> ops::Sub for ImuBias<T> {
     }
 }
 
-impl<'a, T: Numeric> ops::Sub for &'a ImuBias<T> {
+impl<T: Numeric> ops::Sub for &ImuBias<T> {
     type Output = ImuBias<T>;
 
     fn sub(self, rhs: Self) -> ImuBias<T> {

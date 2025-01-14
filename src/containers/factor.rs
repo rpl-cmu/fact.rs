@@ -1,12 +1,19 @@
-use super::{Symbol, TypedSymbol};
+use std::{
+    fmt::{self, Write},
+    marker::PhantomData,
+};
+
+use pad_adapter::PadAdapter;
+
+use super::{DefaultSymbolHandler, KeyFormatter, Symbol, TypedSymbol};
 use crate::{
     containers::{Key, Values},
     dtype,
     linalg::{Const, DiffResult, MatrixBlock},
     linear::LinearFactor,
-    noise::{NoiseModel, NoiseModelSafe, UnitNoise},
-    residuals::ResidualSafe,
-    robust::{RobustCostSafe, L2},
+    noise::{NoiseModel, UnitNoise},
+    residuals::Residual,
+    robust::{RobustCost, L2},
 };
 
 /// Main structure to represent a factor in the graph.
@@ -25,7 +32,8 @@ use crate::{
 /// - <blue>Robust Kernel</blue>: The robust kernel weights the error of the
 ///   factor, given by the traits in the [robust](crate::robust) module.
 ///
-/// To construct a factor, please see the [FactorBuilder] struct.
+/// The easiest way to construct a factor is using the [fac](factrs::fac) macro,
+/// or alternatively, using [FactorBuilder].
 ///
 /// During optimization the factor is linearized around a set of values into a
 /// [LinearFactor].
@@ -48,13 +56,13 @@ use crate::{
 /// let factor = FactorBuilder::new1(residual,
 ///     X(0)).noise(noise).robust(robust).build();
 /// ```
-#[derive(Debug)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Factor {
     keys: Vec<Key>,
-    residual: Box<dyn ResidualSafe>,
-    noise: Box<dyn NoiseModelSafe>,
-    robust: Box<dyn RobustCostSafe>,
+    residual: Box<dyn Residual>,
+    noise: Box<dyn NoiseModel>,
+    robust: Box<dyn RobustCost>,
 }
 
 impl Factor {
@@ -92,7 +100,7 @@ impl Factor {
             .iter()
             .scan(0, |sum, k| {
                 let out = Some(*sum);
-                *sum += values.get_raw(*k).unwrap().dim();
+                *sum += values.get_raw(*k).expect("Key missing in values").dim();
                 out
             })
             .collect::<Vec<_>>();
@@ -107,15 +115,79 @@ impl Factor {
     }
 }
 
+impl fmt::Debug for Factor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        FactorFormatter::<DefaultSymbolHandler>::new(self).fmt(f)
+    }
+}
+
+/// Formatter for a factor
+///
+/// Specifically, this can be used if custom symbols are desired. See
+/// [tests/custom_key](https://github.com/rpl-cmu/factrs/blob/dev/tests/custom_key.rs) for examples.
+pub struct FactorFormatter<'f, KF> {
+    factor: &'f Factor,
+    kf: PhantomData<KF>,
+}
+
+impl<'f, KF> FactorFormatter<'f, KF> {
+    pub fn new(factor: &'f Factor) -> Self {
+        Self {
+            factor,
+            kf: Default::default(),
+        }
+    }
+}
+
+impl<KF: KeyFormatter> fmt::Debug for FactorFormatter<'_, KF> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if f.alternate() {
+            f.write_str("Factor {\n")?;
+            let mut pad = PadAdapter::new(f);
+            // Keys
+            pad.write_str("key: [")?;
+            for (i, key) in self.factor.keys().iter().enumerate() {
+                if i > 0 {
+                    pad.write_str(", ")?;
+                }
+                KF::fmt(&mut pad, *key)?;
+            }
+            pad.write_str("]\n")?;
+            // Residual
+            writeln!(pad, "res: {:#?}", self.factor.residual)?;
+            // Noise
+            writeln!(pad, "noi: {:#?}", self.factor.noise)?;
+            // Robust
+            writeln!(pad, "rob: {:#?}", self.factor.robust)?;
+            f.write_str("}")?;
+        } else {
+            f.write_str("Factor { ")?;
+            for (i, key) in self.factor.keys().iter().enumerate() {
+                if i > 0 {
+                    f.write_str(", ")?;
+                }
+                KF::fmt(f, *key)?;
+            }
+            write!(
+                f,
+                "], residual: {:?}, noise: {:?}, robust: {:?} }}",
+                self.factor.residual, self.factor.noise, self.factor.robust
+            )?;
+        }
+
+        Ok(())
+    }
+}
+
 /// Builder for a factor.
 ///
 /// If the noise model or robust kernel aren't set, they default to [UnitNoise]
 /// and [L2] respectively.
 pub struct FactorBuilder<const DIM_OUT: usize> {
     keys: Vec<Key>,
-    residual: Box<dyn ResidualSafe>,
-    noise: Option<Box<dyn NoiseModelSafe>>,
-    robust: Option<Box<dyn RobustCostSafe>>,
+    residual: Box<dyn Residual>,
+    noise: Option<Box<dyn NoiseModel>>,
+    robust: Option<Box<dyn RobustCost>>,
 }
 
 macro_rules! impl_new_builder {
@@ -124,7 +196,7 @@ macro_rules! impl_new_builder {
             #[doc = "Create a new factor with " $num " variable connections, while verifying the key types."]
             pub fn [<new $num>]<R, $($key_type),*>(residual: R, $($key: $key_type),*) -> Self
             where
-                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + ResidualSafe + 'static,
+                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + Residual + 'static,
                 $(
                     $key_type: TypedSymbol<R::$var>,
                 )*
@@ -140,7 +212,7 @@ macro_rules! impl_new_builder {
             #[doc = "Create a new factor with " $num " variable connections, without verifying the key types."]
             pub fn [<new $num _unchecked>]<R, $($key_type),*>(residual: R, $($key: $key_type),*) -> Self
             where
-                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + ResidualSafe + 'static,
+                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + Residual + 'static,
                 $(
                     $key_type: Symbol,
                 )*
@@ -169,7 +241,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
     /// Add a noise model to the factor.
     pub fn noise<N>(mut self, noise: N) -> Self
     where
-        N: 'static + NoiseModel<Dim = Const<DIM_OUT>> + NoiseModelSafe,
+        N: 'static + NoiseModel<Dim = Const<DIM_OUT>> + NoiseModel,
     {
         self.noise = Some(Box::new(noise));
         self
@@ -178,7 +250,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
     /// Add a robust kernel to the factor.
     pub fn robust<C>(mut self, robust: C) -> Self
     where
-        C: 'static + RobustCostSafe,
+        C: 'static + RobustCost,
     {
         self.robust = Some(Box::new(robust));
         self
@@ -187,7 +259,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
     /// Build the factor.
     pub fn build(self) -> Factor
     where
-        UnitNoise<DIM_OUT>: NoiseModelSafe,
+        UnitNoise<DIM_OUT>: NoiseModel,
     {
         let noise = self.noise.unwrap_or_else(|| Box::new(UnitNoise::<DIM_OUT>));
         let robust = self.robust.unwrap_or_else(|| Box::new(L2));
@@ -203,6 +275,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
 #[cfg(test)]
 mod tests {
 
+    use factrs_proc::fac;
     use matrixcompare::assert_matrix_eq;
 
     use super::*;
@@ -236,10 +309,7 @@ mod tests {
         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
         let robust = GemanMcClure::default();
 
-        let factor = FactorBuilder::new1(residual, X(0))
-            .noise(noise)
-            .robust(robust)
-            .build();
+        let factor: Factor = fac![residual, X(0), noise, robust];
 
         let f = |x: VectorVar3| {
             let mut values = Values::new();
@@ -269,10 +339,7 @@ mod tests {
         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
         let robust = GemanMcClure::default();
 
-        let factor = FactorBuilder::new2(residual, X(0), X(1))
-            .noise(noise)
-            .robust(robust)
-            .build();
+        let factor: Factor = fac![residual, (X(0), X(1)), noise, robust];
 
         let mut values = Values::new();
         values.insert_unchecked(X(0), x.clone());

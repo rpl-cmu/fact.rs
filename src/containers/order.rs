@@ -1,6 +1,6 @@
 use std::collections::hash_map::Iter as HashMapIter;
 
-use ahash::HashMap;
+use foldhash::HashMap;
 
 use super::{Key, Symbol, Values};
 
@@ -95,8 +95,8 @@ mod test {
         // Verify the order
         assert_eq!(order.len(), 3);
         assert_eq!(order.dim(), 11);
-        assert_eq!(order.get(X(0)).unwrap().dim, 2);
-        assert_eq!(order.get(X(1)).unwrap().dim, 6);
-        assert_eq!(order.get(X(2)).unwrap().dim, 3);
+        assert_eq!(order.get(X(0)).expect("Missing key").dim, 2);
+        assert_eq!(order.get(X(1)).expect("Missing key").dim, 6);
+        assert_eq!(order.get(X(2)).expect("Missing key").dim, 3);
     }
 }

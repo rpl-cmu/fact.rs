@@ -3,7 +3,7 @@ use paste::paste;
 use crate::{
     dtype,
     linalg::{Diff, DiffResult, MatrixX, VectorX},
-    variables::Variable,
+    variables::{Variable, VariableDtype},
 };
 
 /// Forward mode differentiator
@@ -41,19 +41,19 @@ macro_rules! numerical_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            fn [<jacobian_$num>]<$( $var: Variable, )* F: Fn($($var,)*) -> VectorX>
+            fn [<jacobian_$num>]<$( $var: VariableDtype, )* F: Fn($($var,)*) -> VectorX>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX> {
                 let eps = dtype::powi(10.0, -PWR);
 
                 // Get Dimension
                 let mut dim = 0;
-                $(dim += $name.dim();)*
+                $(dim += Variable::dim($name);)*
 
                 let res = f($( $name.clone(), )*);
 
                 // Compute gradient
                 let mut jac: MatrixX = MatrixX::zeros(res.len(), dim);
-                let mut tvs = [$( VectorX::zeros($name.dim()), )*];
+                let mut tvs = [$( VectorX::zeros(Variable::dim($name)), )*];
 
                 for i in 0..$num {
                     let mut curr_dim = 0;
@@ -113,19 +113,19 @@ macro_rules! numerical_variable_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            pub fn [<jacobian_variable_$num>]<$( $var: Variable, )* VOut: Variable, F: Fn($($var,)*) -> VOut>
+            pub fn [<jacobian_variable_$num>]<$( $var: VariableDtype, )* VOut: VariableDtype, F: Fn($($var,)*) -> VOut>
                     (f: F, $($name: &$var,)*) -> DiffResult<VOut, MatrixX> {
                 let eps = dtype::powi(10.0, -PWR);
 
                 // Get Dimension
                 let mut dim = 0;
-                $(dim += $name.dim();)*
+                $(dim += Variable::dim($name);)*
 
                 let res = f($( $name.clone(), )*);
 
                 // Compute gradient
                 let mut jac: MatrixX = MatrixX::zeros(VOut::DIM, dim);
-                let mut tvs = [$( VectorX::zeros($name.dim()), )*];
+                let mut tvs = [$( VectorX::zeros(Variable::dim($name)), )*];
 
                 for i in 0..$num {
                     let mut curr_dim = 0;

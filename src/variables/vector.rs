@@ -7,20 +7,10 @@ use crate::{
     dtype,
     linalg::{
         AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, Numeric,
-        Vector, VectorDim, VectorViewX, VectorX,
+        SupersetOf, Vector, VectorDim, VectorViewX, VectorX,
     },
-    tag_variable,
     variables::Variable,
 };
-
-tag_variable!(
-    VectorVar<1>,
-    VectorVar<2>,
-    VectorVar<3>,
-    VectorVar<4>,
-    VectorVar<5>,
-    VectorVar<6>,
-);
 
 // ------------------------- Our needs ------------------------- //
 /// Newtype wrapper around nalgebra::Vector
@@ -33,7 +23,9 @@ tag_variable!(
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VectorVar<const N: usize, T: Numeric = dtype>(pub Vector<N, T>);
 
-impl<const N: usize, T: Numeric> Variable<T> for VectorVar<N, T> {
+#[factrs::mark]
+impl<const N: usize, T: Numeric> Variable for VectorVar<N, T> {
+    type T = T;
     type Dim = Const<N>;
     type Alias<TT: Numeric> = VectorVar<N, TT>;
 
@@ -57,12 +49,12 @@ impl<const N: usize, T: Numeric> Variable<T> for VectorVar<N, T> {
         VectorX::from_iterator(Self::DIM, self.0.iter().cloned())
     }
 
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
-        VectorVar(other.0.map(|x| x.into()))
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
+        VectorVar(self.0.cast())
     }
 
-    // Mostly unncessary, but avoids having to convert VectorX to static vector
-    fn dual_setup<NN: DimName>(idx: usize) -> Self::Alias<DualVector<NN>>
+    // Mostly unnecessary, but avoids having to convert VectorX to static vector
+    fn dual_exp<NN: DimName>(idx: usize) -> Self::Alias<DualVector<NN>>
     where
         AllocatorBuffer<NN>: Sync + Send,
         DefaultAllocator: DualAllocator<NN>,
@@ -76,6 +68,76 @@ impl<const N: usize, T: Numeric> Variable<T> for VectorVar<N, T> {
         VectorVar(tv)
     }
 }
+
+// Since it has an extra generic, we have to tag things by hand
+#[cfg(feature = "serde")]
+const _: () = {
+    use factrs::{
+        core::{BetweenResidual, PriorResidual},
+        residuals::Residual,
+        variables::VariableSafe,
+    };
+
+    impl<const N: usize> typetag::Tagged for VectorVar<N> {
+        fn tag() -> String {
+            format!("VectorVar<{}>", N)
+        }
+    }
+
+    factrs::serde::tag_variable! {
+        VectorVar<1>,
+        VectorVar<2>,
+        VectorVar<3>,
+        VectorVar<4>,
+        VectorVar<5>,
+        VectorVar<6>,
+        VectorVar<7>,
+        VectorVar<8>,
+        VectorVar<9>,
+        VectorVar<10>,
+        VectorVar<11>,
+        VectorVar<12>,
+        VectorVar<13>,
+        VectorVar<14>,
+        VectorVar<15>,
+        VectorVar<16>,
+    }
+
+    factrs::serde::tag_residual! {
+        PriorResidual<VectorVar<1>>,
+        PriorResidual<VectorVar<2>>,
+        PriorResidual<VectorVar<3>>,
+        PriorResidual<VectorVar<4>>,
+        PriorResidual<VectorVar<5>>,
+        PriorResidual<VectorVar<6>>,
+        PriorResidual<VectorVar<7>>,
+        PriorResidual<VectorVar<8>>,
+        PriorResidual<VectorVar<9>>,
+        PriorResidual<VectorVar<10>>,
+        PriorResidual<VectorVar<11>>,
+        PriorResidual<VectorVar<12>>,
+        PriorResidual<VectorVar<13>>,
+        PriorResidual<VectorVar<14>>,
+        PriorResidual<VectorVar<15>>,
+        PriorResidual<VectorVar<16>>,
+        BetweenResidual<VectorVar<1>>,
+        BetweenResidual<VectorVar<2>>,
+        BetweenResidual<VectorVar<3>>,
+        BetweenResidual<VectorVar<4>>,
+        BetweenResidual<VectorVar<5>>,
+        BetweenResidual<VectorVar<6>>,
+        BetweenResidual<VectorVar<7>>,
+        BetweenResidual<VectorVar<8>>,
+        BetweenResidual<VectorVar<9>>,
+        BetweenResidual<VectorVar<10>>,
+        BetweenResidual<VectorVar<11>>,
+        BetweenResidual<VectorVar<12>>,
+        BetweenResidual<VectorVar<13>>,
+        BetweenResidual<VectorVar<14>>,
+        BetweenResidual<VectorVar<15>>,
+        BetweenResidual<VectorVar<16>>,
+    }
+};
 
 macro_rules! impl_vector_new {
     ($($num:literal, [$($args:ident),*]);* $(;)?) => {$(
@@ -110,12 +172,13 @@ impl<const N: usize, T: Numeric> From<VectorVar<N, T>> for Vector<N, T> {
 
 impl<const N: usize, T: Numeric> Display for VectorVar<N, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Vector{}(", N)?;
+        let precision = f.precision().unwrap_or(3);
+        write!(f, "VectorVar{}(", N)?;
         for (i, x) in self.0.iter().enumerate() {
             if i > 0 {
                 write!(f, ", ")?;
             }
-            write!(f, "{:.3}", x)?;
+            write!(f, "{:.p$}", x, p = precision)?;
         }
         write!(f, ")")
     }

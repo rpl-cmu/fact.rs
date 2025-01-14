@@ -49,7 +49,7 @@ impl LinearGraph {
                     let Idx {
                         idx: col,
                         dim: col_dim,
-                    } = order.get(*key).unwrap();
+                    } = order.get(*key).expect("Key missing in values");
                     (0..*col_dim).for_each(|j| {
                         indices.push((row + i, col + j));
                     });
@@ -60,7 +60,7 @@ impl LinearGraph {
 
         let (sparsity_pattern, sparsity_order) =
             SymbolicSparseColMat::try_new_from_indices(total_rows, total_columns, &indices)
-                .unwrap();
+                .expect("Failed to create sparse matrix");
 
         GraphOrder {
             order,
@@ -104,7 +104,7 @@ impl LinearGraph {
             &graph_order.sparsity_order,
             values.as_slice(),
         )
-        .unwrap();
+        .expect("Failed to form sparse matrix from previous sparsity pattern");
 
         DiffResult {
             value: r,
@@ -115,8 +115,8 @@ impl LinearGraph {
 
 #[cfg(test)]
 mod test {
-    use ahash::HashMap;
     use faer_ext::IntoNalgebra;
+    use foldhash::HashMap;
     use matrixcompare::assert_matrix_eq;
 
     use super::*;

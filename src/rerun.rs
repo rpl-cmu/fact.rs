@@ -1,46 +1,17 @@
 use rerun::{
-    components::RotationQuat,
-    Arrows2D,
-    Arrows3D,
-    AsComponents,
-    Points2D,
-    Points3D,
-    Quaternion,
-    Rotation3D,
-    Transform3D,
-    Vec2D,
-    Vec3D,
+    components::RotationQuat, Arrows2D, Arrows3D, AsComponents, Points2D, Points3D, Quaternion,
+    Rotation3D, Transform3D, Vec2D, Vec3D,
 };
 
 use crate::{
     containers::Values,
     optimizers::OptObserver,
-    variables::{MatrixLieGroup, VariableUmbrella, VectorVar2, VectorVar3, SE2, SE3, SO2, SO3},
+    variables::{MatrixLieGroup, VariableDtype, VectorVar2, VectorVar3, SE2, SE3, SO2, SO3},
 };
-/*
-Each of our fact.rs types can be turned into a handful of rerun types. These include,
-
-VectorVar2 -> Vec2D, Points2D
-VectorVar3 -> Vec3D, Points3D
-
-SO2 -> Arrows2D
-SE2 -> Arrows2D, Points2D
-
-SO3 -> Rotation3D, Arrows3D
-SE3 -> Transform3D, Arrows3D, Points3D
-
-Furthermore, we can also convert iterators of these types into the corresponding rerun types. This is useful for visualizing multiple objects at once.
-
-VectorVar2 -> Points2D
-VectorVar3 -> Points3D
-
-SE2 -> Arrows2D, Points2D
-SE3 -> Arrows3D, Points3D
-
-*/
 
 // ------------------------- 2D Objects ------------------------- //
 // 2D Vectors
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a VectorVar2> for Vec2D {
     fn from(v: &'a VectorVar2) -> Vec2D {
         Vec2D::new(v[0] as f32, v[1] as f32)
@@ -67,11 +38,20 @@ impl From<VectorVar2> for Points2D {
 }
 
 // 2D Rotations
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SO2> for Arrows2D {
     fn from(so2: &'a SO2) -> Arrows2D {
         let mat = so2.to_matrix().map(|x| x as f32);
-        let x: [f32; 2] = mat.column(0).as_slice().try_into().unwrap();
-        let y: [f32; 2] = mat.column(1).as_slice().try_into().unwrap();
+        let x: [f32; 2] = mat
+            .column(0)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
+        let y: [f32; 2] = mat
+            .column(1)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
         Arrows2D::from_vectors([x, y]).with_colors([[255, 0, 0], [0, 255, 0]])
     }
 }
@@ -83,9 +63,15 @@ impl From<SO2> for Arrows2D {
 }
 
 // 2D SE2
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SE2> for Arrows2D {
     fn from(se2: &'a SE2) -> Arrows2D {
-        let xy: [f32; 2] = se2.xy().map(|x| x as f32).as_slice().try_into().unwrap();
+        let xy: [f32; 2] = se2
+            .xy()
+            .map(|x| x as f32)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
         let arrows: Arrows2D = se2.rot().into();
         arrows.with_origins([xy, xy])
     }
@@ -97,6 +83,7 @@ impl From<SE2> for Arrows2D {
     }
 }
 
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SE2> for Points2D {
     fn from(se2: &'a SE2) -> Points2D {
         let xy = [se2.x() as f32, se2.y() as f32];
@@ -110,6 +97,7 @@ impl From<SE2> for Points2D {
     }
 }
 
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SE2> for Vec2D {
     fn from(se2: &'a SE2) -> Vec2D {
         let xy = [se2.x() as f32, se2.y() as f32];
@@ -125,6 +113,7 @@ impl From<SE2> for Vec2D {
 
 // ------------------------- 3D Objects ------------------------- //
 // 3D Vectors
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a VectorVar3> for Vec3D {
     fn from(v: &'a VectorVar3) -> Vec3D {
         Vec3D::new(v[0] as f32, v[1] as f32, v[2] as f32)
@@ -151,6 +140,7 @@ impl From<VectorVar3> for Points3D {
 }
 
 // 3D Rotations
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SO3> for Rotation3D {
     fn from(so3: &'a SO3) -> Rotation3D {
         let xyzw = [
@@ -169,12 +159,25 @@ impl From<SO3> for Rotation3D {
     }
 }
 
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SO3> for Arrows3D {
     fn from(so3: &'a SO3) -> Arrows3D {
         let mat = so3.to_matrix().map(|x| x as f32);
-        let x: [f32; 3] = mat.column(0).as_slice().try_into().unwrap();
-        let y: [f32; 3] = mat.column(1).as_slice().try_into().unwrap();
-        let z: [f32; 3] = mat.column(2).as_slice().try_into().unwrap();
+        let x: [f32; 3] = mat
+            .column(0)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
+        let y: [f32; 3] = mat
+            .column(1)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
+        let z: [f32; 3] = mat
+            .column(2)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
         Arrows3D::from_vectors([x, y, z]).with_colors([[255, 0, 0], [0, 255, 0], [0, 0, 255]])
     }
 }
@@ -201,10 +204,16 @@ impl From<SE3> for Transform3D {
     }
 }
 
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SE3> for Arrows3D {
     fn from(se3: &'a SE3) -> Arrows3D {
         let arrows: Arrows3D = se3.rot().into();
-        let xyz: [f32; 3] = se3.xyz().map(|x| x as f32).as_slice().try_into().unwrap();
+        let xyz: [f32; 3] = se3
+            .xyz()
+            .map(|x| x as f32)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
         arrows.with_origins([xyz, xyz, xyz])
     }
 }
@@ -352,9 +361,18 @@ impl<'a> FromIterator<&'a SE3> for Points3D {
 }
 
 // ------------------------- Streamer ------------------------- //
+/// Rerun optimizer observer
+///
+/// Observer that can be plugged into an optimizer to record the state of the
+/// optimization at each optimization step. Generic V is the variable type and R
+/// is the rerun type.
+///
+/// See the observers field of either
+/// [GaussNewton](crate::optimizers::GaussNewton) or
+/// [LevenMarquardt](crate::optimizers::LevenMarquardt) for more information.
 pub struct RerunObserver<V, R>
 where
-    V: VariableUmbrella + 'static,
+    V: VariableDtype + 'static,
     R: AsComponents,
     for<'a> R: FromIterator<&'a V>,
 {
@@ -366,7 +384,7 @@ where
 
 impl<V, R> RerunObserver<V, R>
 where
-    V: VariableUmbrella + 'static,
+    V: VariableDtype + 'static,
     R: AsComponents,
     for<'a> R: FromIterator<&'a V>,
 {
@@ -382,7 +400,7 @@ where
 
 impl<V, R> OptObserver for RerunObserver<V, R>
 where
-    V: VariableUmbrella + 'static,
+    V: VariableDtype + 'static,
     R: AsComponents,
     for<'a> R: FromIterator<&'a V>,
 {
@@ -391,6 +409,8 @@ where
     fn on_step(&self, values: &Values, idx: f64) {
         self.rec.set_time_seconds("stable_time", idx);
         let sol: R = values.filter::<V>().collect();
-        self.rec.log(self.topic.clone(), &sol).unwrap();
+        self.rec
+            .log(self.topic.clone(), &sol)
+            .expect("Failed to log topic");
     }
 }

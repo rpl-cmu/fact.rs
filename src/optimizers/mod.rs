@@ -35,15 +35,7 @@
 //! using the [test_optimizer](crate::test_optimizer) macro to run a handful of
 //! simple tests over a few different variable types to ensure correctness.
 mod traits;
-pub use traits::{
-    GraphOptimizer,
-    OptError,
-    OptObserver,
-    OptObserverVec,
-    OptParams,
-    OptResult,
-    Optimizer,
-};
+pub use traits::{OptError, OptObserver, OptObserverVec, OptParams, OptResult, Optimizer};
 
 mod macros;
 
@@ -64,18 +56,21 @@ pub mod test {
         containers::{FactorBuilder, Graph, Values},
         dtype,
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
-        noise::{NoiseModelSafe, UnitNoise},
-        residuals::{BetweenResidual, PriorResidual, Residual, ResidualSafe},
+        residuals::{BetweenResidual, PriorResidual, Residual},
         symbols::X,
-        variables::VariableUmbrella,
+        variables::VariableDtype,
     };
 
-    pub fn optimize_prior<O, T, const DIM: usize>()
-    where
-        T: 'static + VariableUmbrella<Dim = Const<DIM>>,
-        UnitNoise<DIM>: NoiseModelSafe,
-        PriorResidual<T>: ResidualSafe,
-        O: Optimizer<Input = Values> + GraphOptimizer,
+    pub fn optimize_prior<
+        O,
+        const DIM: usize,
+        #[cfg(feature = "serde")] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static + typetag::Tagged,
+        #[cfg(not(feature = "serde"))] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static,
+    >(
+        new: &dyn Fn(Graph) -> O,
+    ) where
+        PriorResidual<T>: Residual,
+        O: Optimizer<Input = Values>,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i + 1) as dtype) / 10.0);
         let p = T::exp(t.as_view());
@@ -88,10 +83,10 @@ pub mod test {
         let factor = FactorBuilder::new1_unchecked(res, X(0)).build();
         graph.add_factor(factor);
 
-        let mut opt = O::new(graph);
-        values = opt.optimize(values).unwrap();
+        let mut opt = new(graph);
+        values = opt.optimize(values).expect("Optimization failed");
 
-        let out: &T = values.get_unchecked(X(0)).unwrap();
+        let out: &T = values.get_unchecked(X(0)).expect("Missing X(0)");
         assert_matrix_eq!(
             out.ominus(&p),
             VectorX::zeros(T::DIM),
@@ -100,15 +95,18 @@ pub mod test {
         );
     }
 
-    pub fn optimize_between<O, T, const DIM: usize, const DIM_DOUBLE: usize>()
-    where
-        T: 'static + VariableUmbrella<Dim = nalgebra::Const<DIM>>,
-        UnitNoise<DIM>: NoiseModelSafe,
-        PriorResidual<T>:
-            ResidualSafe + Residual<DimIn = Const<DIM>, DimOut = Const<DIM>, NumVars = Const<1>>,
-        BetweenResidual<T>: ResidualSafe
-            + Residual<DimIn = Const<DIM_DOUBLE>, DimOut = Const<DIM>, NumVars = Const<2>>,
-        O: Optimizer<Input = Values> + GraphOptimizer,
+    pub fn optimize_between<
+        O,
+        const DIM: usize,
+        const DIM_DOUBLE: usize,
+        #[cfg(feature = "serde")] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static + typetag::Tagged,
+        #[cfg(not(feature = "serde"))] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static,
+    >(
+        new: &dyn Fn(Graph) -> O,
+    ) where
+        PriorResidual<T>: Residual,
+        BetweenResidual<T>: Residual,
+        O: Optimizer<Input = Values>,
         Const<DIM>: ToTypenum,
         AllocatorBuffer<DimNameSum<Const<DIM>, Const<DIM>>>: Sync + Send,
         DefaultAllocator: DualAllocator<DimNameSum<Const<DIM>, Const<DIM>>>,
@@ -135,10 +133,10 @@ pub mod test {
         let factor = FactorBuilder::new2_unchecked(res, X(0), X(1)).build();
         graph.add_factor(factor);
 
-        let mut opt = O::new(graph);
-        values = opt.optimize(values).unwrap();
+        let mut opt = new(graph);
+        values = opt.optimize(values).expect("Optimization failed");
 
-        let out1: &T = values.get_unchecked(X(0)).unwrap();
+        let out1: &T = values.get_unchecked(X(0)).expect("Missing X(0)");
         assert_matrix_eq!(
             out1.ominus(&p1),
             VectorX::zeros(T::DIM),
@@ -146,7 +144,7 @@ pub mod test {
             tol = 1e-6
         );
 
-        let out2: &T = values.get_unchecked(X(1)).unwrap();
+        let out2: &T = values.get_unchecked(X(1)).expect("Missing X(1)");
         assert_matrix_eq!(
             out2.ominus(&p2),
             VectorX::zeros(T::DIM),

@@ -5,6 +5,7 @@ pub use nalgebra::{
     allocator::Allocator, dmatrix as matrixx, dvector as vectorx, ComplexField, Const,
     DefaultAllocator, Dim, DimName, Dyn, RealField,
 };
+pub use simba::scalar::SupersetOf;
 
 use crate::dtype;
 

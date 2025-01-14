@@ -5,7 +5,7 @@
 #[macro_export]
 macro_rules! assert_variable_eq {
     ($x:expr, $y:expr) => {
-        matrixcompare::assert_matrix_eq!($x.ominus(&$y), $crate::linalg::VectorX::zeros($x.dim()));
+        matrixcompare::assert_matrix_eq!($crate::variables::Variable::ominus($x, &$y), $crate::linalg::VectorX::zeros($crate::variables::Variable::dim($x)));
     };
     ($x:expr, $y:expr, comp = exact) => {
         matrixcompare::assert_matrix_eq!($x.ominus(&$y), $crate::linalg::VectorX::zeros($x.dim()), comp = exact);
@@ -50,7 +50,7 @@ macro_rules! assert_variable_eq {
 macro_rules! test_variable {
     ($var:ident) => {
         // Return a misc element for our tests
-        fn element<T: Variable>(scale: $crate::dtype) -> T {
+        fn element<T: $crate::variables::VariableDtype>(scale: $crate::dtype) -> T {
             let xi = $crate::linalg::VectorX::from_fn(T::DIM, |_, i| {
                 scale * ((i + 1) as $crate::dtype) / 10.0
             });
@@ -104,15 +104,15 @@ macro_rules! test_variable {
 
 /// Test (most of) the matrix lie group rules
 ///
-/// Specifcally test
-/// - to/form matrix
-/// - hat/vee
+/// Specifically test
+/// - to/from matrix are invertible
+/// - hat/vee are invertible
 /// - jacobian of rotation function with hat_swap
 #[macro_export]
 macro_rules! test_lie {
     ($var:ident) => {
         fn tangent<T: Variable>(scale: dtype) -> $crate::linalg::VectorX {
-            VectorX::from_fn(T::DIM, |_, i| scale * ((i + 1) as dtype) / 10.0)
+            $crate::linalg::VectorX::from_fn(T::DIM, |_, i| scale * ((i + 1) as dtype) / 10.0)
         }
 
         #[test]
@@ -169,12 +169,4 @@ macro_rules! test_lie {
             matrixcompare::assert_matrix_eq!(dx, dx_exp, comp = abs, tol = 1e-6);
         }
     };
-}
-
-/// Register a type as a [variable](crate::variables) for serialization.
-#[macro_export]
-macro_rules! tag_variable {
-    ($($ty:ty),* $(,)?) => {$(
-        $crate::register_typetag!($crate::variables::VariableSafe, $ty);
-    )*};
 }

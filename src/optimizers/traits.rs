@@ -1,4 +1,4 @@
-use crate::{containers::Graph, dtype};
+use crate::dtype;
 
 /// Error types for optimizers
 #[derive(Debug)]
@@ -164,11 +164,4 @@ pub trait Optimizer {
 
         Err(OptError::MaxIterations(values))
     }
-}
-
-/// Small trait for optimizers that work on a graph
-pub trait GraphOptimizer: Optimizer {
-    fn new(graph: Graph) -> Self;
-
-    fn graph(&self) -> &Graph;
 }

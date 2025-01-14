@@ -117,8 +117,8 @@ each of which is a 3-vector with a 3x3 covariance matrix. These are
 - $\epsilon_{a^b}$: the noise of the linear acceleration bias
 - $\epsilon_{int}$: the noise of the integration error
 - $\epsilon_{init}$: the noise of the bias initialization
-These will be stacked into a 18-vector with a block-diagonal 18x18 covariance
-matrix $Q$. We introduce the noise as follows,
+
+These will be stacked into a 18-vector with a block-diagonal 18x18 covariance matrix $Q$. We introduce the noise as follows,
 $$ \begin{aligned}
 \theta_{k+1} &= \theta_k + H(\theta_k)^{-1} (\omega_k + \epsilon_\omega - b^\omega_0 - \epsilon_{init}) \Delta t \\\\ 
 v^a_{k+1} &= v^a_k + \exp(\theta_k^\wedge) (a_k + \epsilon_a - b^a_0 - \epsilon_{init}) \Delta t \\\\
